@@ -20,6 +20,21 @@
 #define RHEL_RELEASE_VERSION(a,b) (((a) << 8) + (b))
 #define RHEL_RELEASE_CODE 0
 #endif
+#include <linux/timer.h>
+/* Kernel renamed the timer API (from_timer -> timer_container_of,
+ * del_timer_sync -> timer_delete_sync). timer_container_of only exists
+ * on kernels where the rename happened, so use it as the signal and
+ * bring the old names back for this driver's own use. */
+#ifdef timer_container_of
+#ifndef from_timer
+#define from_timer(var, callback_timer, timer_fieldname) \
+	timer_container_of(var, callback_timer, timer_fieldname)
+#endif
+static inline int del_timer_sync(struct timer_list *timer)
+{
+	return timer_delete_sync(timer);
+}
+#endif /* timer_container_of */
 #include <linux/spinlock.h>
 #include <linux/compiler.h>
 #include <linux/kernel.h>

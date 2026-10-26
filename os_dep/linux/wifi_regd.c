@@ -71,14 +71,34 @@ static struct country_code_to_enum_rd allCountries[] = {
 	REG_RULE(5150-10, 5850+10, 80, 0, 30,	\
 		 NL80211_RRF_PASSIVE_SCAN | NL80211_RRF_NO_IBSS)
 
+/*
+ * UNII-1, non-DFS: chan 36-48. No radar sharing in this sub-band, so no
+ * passive-scan/no-IR gate. The DFS sub-band (UNII-2/2e, chan 52-144,
+ * below) and all DFS channel handling elsewhere in this driver are left
+ * untouched: radar-shared spectrum stays passive-only / CAC-gated.
+ */
+#define RTW_5GHZ_5150_5250_ACTIVE	\
+	REG_RULE(5150-10, 5250+10, 80, 0, 30, NL80211_RRF_NO_IBSS)
+
+/* UNII-2/2e, DFS: chan 52-144. Unchanged: passive until CAC clears it. */
+#define RTW_5GHZ_5250_5725_DFS	\
+	REG_RULE(5250-10, 5725+10, 80, 0, 30,	\
+		 NL80211_RRF_PASSIVE_SCAN | NL80211_RRF_NO_IBSS)
+
+/* UNII-3, non-DFS: chan 149-165. No radar sharing, no passive-scan gate. */
+#define RTW_5GHZ_5725_5850_ACTIVE	\
+	REG_RULE(5725-10, 5850+10, 80, 0, 30, NL80211_RRF_NO_IBSS)
+
 static const struct ieee80211_regdomain rtw_regdom_rd = {
-	.n_reg_rules = 4,
+	.n_reg_rules = 6,
 	.alpha2 = "99",
 	.reg_rules = {
 		RTW_2GHZ_CH01_11,
 		RTW_2GHZ_CH12_13,
 		RTW_2GHZ_CH14,
-		RTW_5GHZ_5150_5850,
+		RTW_5GHZ_5150_5250_ACTIVE,
+		RTW_5GHZ_5250_5725_DFS,
+		RTW_5GHZ_5725_5850_ACTIVE,
 	}
 };
 

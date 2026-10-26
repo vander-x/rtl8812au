@@ -16,6 +16,7 @@
 
 #include <drv_types.h>
 #include <hal_data.h>
+#include <linux/string.h>
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 8, 0))
 #define strlcpy strscpy
@@ -1468,7 +1469,7 @@ static int rtw_ndev_notifier_call(struct notifier_block *nb, unsigned long state
 	switch (state) {
 	case NETDEV_CHANGENAME:
 		rtw_adapter_proc_replace(ndev);
-		strncpy(adapter->old_ifname, ndev->name, IFNAMSIZ);
+		strscpy(adapter->old_ifname, ndev->name, IFNAMSIZ);
 		adapter->old_ifname[IFNAMSIZ-1] = 0;
 		break;
 	#ifdef CONFIG_NEW_NETDEV_HDL
@@ -1505,7 +1506,7 @@ int rtw_ndev_init(struct net_device *dev)
 
 	RTW_PRINT(FUNC_ADPT_FMT" if%d mac_addr="MAC_FMT"\n"
 		, FUNC_ADPT_ARG(adapter), (adapter->iface_id + 1), MAC_ARG(dev->dev_addr));
-	strncpy(adapter->old_ifname, dev->name, IFNAMSIZ);
+	strscpy(adapter->old_ifname, dev->name, IFNAMSIZ);
 	adapter->old_ifname[IFNAMSIZ - 1] = '\0';
 	rtw_adapter_proc_init(dev);
 
