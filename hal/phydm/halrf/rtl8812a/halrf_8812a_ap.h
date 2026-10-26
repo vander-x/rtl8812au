@@ -23,30 +23,6 @@
 #define RF_T_METER_8812A		0x42
 
 
-#if 0
-void configure_txpower_track_8812a(
-	struct txpwrtrack_cfg	*config
-);
-
-
-
-
-void do_iqk_8812a(
-	void		*dm_void,
-	u8		delta_thermal_index,
-	u8		thermal_value,
-	u8		threshold
-);
-
-void
-odm_tx_pwr_track_set_pwr8812a(
-	struct dm_struct			*dm,
-	enum pwrtrack_method	method,
-	u8				rf_path,
-	u8				channel_mapped_index
-);
-
-#endif
 
 
 /* 1 7.	IQK */

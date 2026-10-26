@@ -546,10 +546,6 @@ void rtw_hal_turbo_edca(_adapter *adapter)
 	struct mlme_ext_info	*pmlmeinfo = &(pmlmeext->mlmext_info);
 
 	/* Parameter suggested by Scott  */
-#if 0
-	u32	EDCA_BE_UL = edca_setting_UL[p_mgnt_info->iot_peer];
-	u32	EDCA_BE_DL = edca_setting_DL[p_mgnt_info->iot_peer];
-#endif
 	u32	EDCA_BE_UL = 0x5ea42b;
 	u32	EDCA_BE_DL = 0x00a42b;
 	u8	ic_type = rtw_get_chip_type(adapter);
@@ -619,10 +615,6 @@ void rtw_hal_turbo_edca(_adapter *adapter)
 				traffic_index = UP_LINK;
 			}
 		}
-#if 0
-		if ((p_dm_odm->dm_edca_table.prv_traffic_idx != traffic_index)
-			|| (!p_dm_odm->dm_edca_table.is_current_turbo_edca))
-#endif
 		{
 			if (interface_type == RTW_PCIE) {
 				EDCA_BE_UL = 0x6ea42b;
@@ -1248,11 +1240,6 @@ void dump_sta_traffic(void *sel, _adapter *adapter, struct sta_info *psta)
 	else
 		_RTW_PRINT_SEL(sel, "Total : %d(Kbps)\n", psta->sta_stats.smooth_tx_tp_kbits + psta->sta_stats.rx_tp_kbits);
 
-	#if 0
-	RTW_PRINT_SEL(sel, "Moving-AVG TP {Tx,Rx,Total} = { %d , %d , %d } Mbps\n\n",
-		(psta->cmn.tx_moving_average_tp << 3), (psta->cmn.rx_moving_average_tp << 3),
-		(psta->cmn.tx_moving_average_tp + psta->cmn.rx_moving_average_tp) << 3);
-	#endif
 }
 
 void dump_sta_info(void *sel, struct sta_info *psta)

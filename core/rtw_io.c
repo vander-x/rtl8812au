@@ -806,14 +806,6 @@ u8 dbg_rtw_sd_f0_read8(_adapter *adapter, u32 addr, const char *caller, const in
 {
 	u8 val = _rtw_sd_f0_read8(adapter, addr);
 
-#if 0
-	const struct rtw_io_sniff_ent *ent = match_read_sniff(adapter, addr, 1, val);
-
-	if (ent) {
-		RTW_INFO("DBG_IO %s:%d rtw_sd_f0_read8(0x%04x) return 0x%02x %s\n"
-			, caller, line, addr, val, rtw_io_sniff_ent_get_tag(ent));
-	}
-#endif
 
 	return val;
 }

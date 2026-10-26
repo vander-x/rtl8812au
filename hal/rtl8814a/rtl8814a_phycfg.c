@@ -1121,16 +1121,6 @@ PHY_GetTxPowerLevel8814(
 {
 	HAL_DATA_TYPE	*pHalData = GET_HAL_DATA(Adapter);
 	*powerlevel = pHalData->CurrentTxPwrIdx;
-#if 0
-	HAL_DATA_TYPE	*pHalData = GET_HAL_DATA(Adapter);
-	PMGNT_INFO		pMgntInfo = &(Adapter->MgntInfo);
-	s4Byte			TxPwrDbm = 13;
-
-	if ( pMgntInfo->ClientConfigPwrInDbm != UNSPECIFIED_PWR_DBM )
-		*powerlevel = pMgntInfo->ClientConfigPwrInDbm;
-	else
-		*powerlevel = TxPwrDbm;
-#endif //0
 /*
 	//PMPT_CONTEXT            pMptCtx = &(Adapter->mppriv.mpt_ctx);
 	//u8 mgn_rate = mpt_to_mgnt_rate(HwRateToMPTRate(Adapter->mppriv.rateidx));
@@ -2475,14 +2465,6 @@ phy_SwChnl8814A(
 	if (kfree_data->flag & KFREE_FLAG_ON) {
 
 		channelIdx = rtw_ch_to_bb_gain_sel(channelToSW);
-	#if 0
-		if (pHalData->RfKFree_ch_group != channelIdx) {
-			/* Todo: wait for new phydm ready */
-			phy_ConfigKFree8814A(pAdapter, channelToSW, pHalData->current_band_type);
-			phydm_ConfigKFree(pDM_Odm, channelToSW, kfree_data->bb_gain);
-			RTW_INFO("RfKFree_ch_group =%d\n", channelIdx);
-		}
-	#endif
 
 		pHalData->RfKFree_ch_group = channelIdx;
 

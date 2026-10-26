@@ -42,16 +42,6 @@ typedef struct txdescriptor_8814 {
  -- For 32 bit, each segment is 8 bytes.
  -- For 64 bit, each segment is 16 bytes.
 */
-#if 0
-	#if 1 /* 32 bit */
-		#define SET_TX_EXTBUFF_DESC_LEN_8814A(__pTxDesc, __Value, __Set) SET_BITS_TO_LE_4BYTE(__pTxDesc+(__Set*8), 0, 16, __Value)
-		#define SET_TX_EXTBUFF_DESC_ADDR_LOW_8814A(__pTxDesc, __Value, __Set) SET_BITS_TO_LE_4BYTE(__pTxDesc+(__Set*8)+4, 0, 32, __Value)
-	#else /* 64 bit */
-		#define SET_TX_EXTBUFF_DESC_LEN_8814A(__pTxDesc, __Value, __Set) SET_BITS_TO_LE_4BYTE(__pTxDesc+(__Set*16), 0, 16, __Value)
-		#define SET_TX_EXTBUFF_DESC_ADDR_LOW_8814A(__pTxDesc, __Value, __Set) SET_BITS_TO_LE_4BYTE(__pTxDesc+(__Set*16)+4, 0, 32, __Value)
-	#endif
-	#define SET_TX_EXTBUFF_DESC_ADDR_HIGH_8814A(__pTxDesc, __Value, __Set) SET_BITS_TO_LE_4BYTE(__pTxDesc+(__Set*16)+8, 0, 32, __Value)
-#endif
 /*c2h-DWORD 2*/
 #define GET_RX_STATUS_DESC_RPT_SEL_8814A(__pRxDesc)			LE_BITS_TO_4BYTE(__pRxDesc+8, 28, 1)
 
@@ -276,7 +266,7 @@ void fill_txdesc_bmc_tx_rate(struct pkt_attrib *pattrib, u8 *ptxdesc);
 	s32 rtl8814au_mgnt_xmit(PADAPTER padapter, struct xmit_frame *pmgntframe);
 	s32	 rtl8814au_hal_xmitframe_enqueue(_adapter *padapter, struct xmit_frame *pxmitframe);
 	s32 rtl8814au_xmit_buf_handler(PADAPTER padapter);
-	void rtl8814au_xmit_tasklet(void *priv);
+	void rtl8814au_xmit_tasklet(struct tasklet_struct *t);
 	s32 rtl8814au_xmitframe_complete(_adapter *padapter, struct xmit_priv *pxmitpriv, struct xmit_buf *pxmitbuf);
 #endif /* CONFIG_USB_HCI */
 

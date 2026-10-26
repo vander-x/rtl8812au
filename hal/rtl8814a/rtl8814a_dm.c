@@ -41,23 +41,6 @@ dm_CheckProtection(
 	IN	PADAPTER	Adapter
 	)
 {
-#if 0
-	PMGNT_INFO		pMgntInfo = &(Adapter->MgntInfo);
-	u1Byte			CurRate, RateThreshold;
-
-	if(pMgntInfo->pHTInfo->bCurBW40MHz)
-		RateThreshold = MGN_MCS1;
-	else
-		RateThreshold = MGN_MCS3;
-
-	if(Adapter->TxStats.CurrentInitTxRate <= RateThreshold) {
-		pMgntInfo->bDmDisableProtect = TRUE;
-		DbgPrint("Forced disable protect: %x\n", Adapter->TxStats.CurrentInitTxRate);
-	} else {
-		pMgntInfo->bDmDisableProtect = FALSE;
-		DbgPrint("Enable protect: %x\n", Adapter->TxStats.CurrentInitTxRate);
-	}
-#endif
 }
 
 #ifdef CONFIG_SUPPORT_HW_WPS_PBC
@@ -151,23 +134,6 @@ dm_InterruptMigration(
 		}
 	}
 
-#if 0
-	if (bCurrentACIntDisable != ACIntToSet) {
-		RTW_INFO("%s(): Update AC interrrupt(%d)\n", __FUNCTION__, ACIntToSet);
-		if (ACIntToSet) { /*  Disable four ACs interrupts. */
-			/* */
-			/*  <Roger_Notes> Disable VO, VI, BE and BK four AC interrupts to gain more efficient CPU utilization. */
-			/*  When extremely highly Rx OK occurs, we will disable Tx interrupts. */
-			/*  2010.03.05. */
-			/* */
-			UpdateInterruptMask8192CE(Adapter, 0, RT_AC_INT_MASKS);
-			pHalData->bDisableTxInt = ACIntToSet;
-		} else { /*  Enable four ACs interrupts. */
-			UpdateInterruptMask8192CE(Adapter, RT_AC_INT_MASKS, 0);
-			pHalData->bDisableTxInt = ACIntToSet;
-		}
-	}
-#endif
 
 }
 

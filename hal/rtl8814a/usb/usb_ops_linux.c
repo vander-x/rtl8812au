@@ -67,14 +67,6 @@ void interrupt_handler_8814au(_adapter *padapter, u16 pkt_len, u8 *pbuf)
 #endif
 		{
 			struct mlme_priv *pmlmepriv = &padapter->mlmepriv;
-#if 0
-			if (pHalData->IntArray[0] & IMR_BCNDMAINT0_88E)
-				RTW_INFO("%s: HISR_BCNERLY_INT\n", __func__);
-			if (pHalData->IntArray[0] & IMR_TBDOK_88E)
-				RTW_INFO("%s: HISR_TXBCNOK\n", __func__);
-			if (pHalData->IntArray[0] & IMR_TBDER_88E)
-				RTW_INFO("%s: HISR_TXBCNERR\n", __func__);
-#endif /* 0 */
 
 			if(check_fwstate(pmlmepriv, WIFI_AP_STATE))
 			{
@@ -121,137 +113,12 @@ void interrupt_handler_8814au(_adapter *padapter, u16 pkt_len, u8 *pbuf)
 #endif
 }
 #endif /* CONFIG_SUPPORT_USB_INT */
-#if 0
-int recvbuf2recvframe(PADAPTER padapter, void *ptr)
-{
-	u8	*pbuf;
-	u8	pkt_cnt = 0;
-	u32	pkt_offset;
-	s32	transfer_len;
-	u8				*pphy_status = NULL;
-	union recv_frame	*precvframe = NULL;
-	struct rx_pkt_attrib	*pattrib = NULL;
-	HAL_DATA_TYPE	*pHalData = GET_HAL_DATA(padapter);
-	struct recv_priv	*precvpriv = &padapter->recvpriv;
-	_queue			*pfree_recv_queue = &precvpriv->free_recv_queue;
-	_pkt *pskb;
 
-#ifdef CONFIG_USE_USB_BUFFER_ALLOC_RX
-	pskb = NULL;
-	transfer_len = (s32)((struct recv_buf *)ptr)->transfer_len;
-	pbuf = ((struct recv_buf *)ptr)->pbuf;
-#else
-	pskb = (_pkt *)ptr;
-	transfer_len = (s32)pskb->len;
-	pbuf = pskb->data;
-#endif/* CONFIG_USE_USB_BUFFER_ALLOC_RX */
-
-
-#ifdef CONFIG_USB_RX_AGGREGATION
-	pkt_cnt = GET_RX_STATUS_DESC_DMA_AGG_NUM_8814A(pbuf);
-#endif
-
-	do {
-		precvframe = rtw_alloc_recvframe(pfree_recv_queue);
-		if (precvframe == NULL) {
-			RTW_INFO("%s()-%d: rtw_alloc_recvframe() failed! RX Drop!\n", __FUNCTION__, __LINE__);
-			goto _exit_recvbuf2recvframe;
-		}
-
-		_rtw_init_listhead(&precvframe->u.hdr.list);
-		precvframe->u.hdr.precvbuf = NULL;	/* can't access the precvbuf for new arch. */
-		precvframe->u.hdr.len = 0;
-
-		rtl8814_query_rx_desc_status(precvframe, pbuf);
-
-		pattrib = &precvframe->u.hdr.attrib;
-
-		if ((padapter->registrypriv.mp_mode == 0) && ((pattrib->crc_err) || (pattrib->icv_err))) {
-			RTW_INFO("%s: RX Warning! crc_err=%d icv_err=%d, skip!\n", __FUNCTION__, pattrib->crc_err, pattrib->icv_err);
-
-			rtw_free_recvframe(precvframe, pfree_recv_queue);
-			goto _exit_recvbuf2recvframe;
-		}
-
-		pkt_offset = RXDESC_SIZE + pattrib->drvinfo_sz + pattrib->shift_sz + pattrib->pkt_len;
-
-		if ((pattrib->pkt_len <= 0) || (pkt_offset > transfer_len)) {
-			RTW_INFO("%s()-%d: RX Warning!,pkt_len<=0 or pkt_offset> transfer_len\n", __FUNCTION__, __LINE__);
-			rtw_free_recvframe(precvframe, pfree_recv_queue);
-			goto _exit_recvbuf2recvframe;
-		}
-
-#ifdef CONFIG_RX_PACKET_APPEND_FCS
-                if (check_fwstate(&padapter->mlmepriv, WIFI_MONITOR_STATE) == _FALSE)
-                        if ((pattrib->pkt_rpt_type == NORMAL_RX) && (pHalData->ReceiveConfig & RCR_APPFCS))
-                                pattrib->pkt_len -= IEEE80211_FCS_LEN;
-#endif
-		if (rtw_os_alloc_recvframe(padapter, precvframe,
-			(pbuf + pattrib->shift_sz + pattrib->drvinfo_sz + RXDESC_SIZE), pskb) == _FAIL) {
-			rtw_free_recvframe(precvframe, pfree_recv_queue);
-
-			goto _exit_recvbuf2recvframe;
-		}
-
-		recvframe_put(precvframe, pattrib->pkt_len);
-		/* recvframe_pull(precvframe, drvinfo_sz + RXDESC_SIZE); */
-
-		if(pattrib->pkt_rpt_type == NORMAL_RX)//Normal rx packet
-		{
-			if(pattrib->physt)
-				pphy_status = (pbuf + RXDESC_OFFSET);
-
-#ifdef CONFIG_CONCURRENT_MODE
-			if(rtw_buddy_adapter_up(padapter))
-			{
-				if(pre_recv_entry(precvframe, pphy_status) != _SUCCESS)
-				{
-					RT_TRACE(_module_rtl871x_recv_c_,_drv_err_,
-						("recvbuf2recvframe: recv_entry(precvframe) != _SUCCESS\n"));
-				}
-			}
-#endif //CONFIG_CONCURRENT_MODE
-
-			if(pattrib->physt && pphy_status)
-				rx_query_phy_status(precvframe, pphy_status);
-
-			if(rtw_recv_entry(precvframe) != _SUCCESS)
-			{
-				RT_TRACE(_module_rtl871x_recv_c_,_drv_err_,
-					("recvbuf2recvframe: rtw_recv_entry(precvframe) != _SUCCESS\n"));
-			}
-
-		}
-		else{ // pkt_rpt_type == TX_REPORT1-CCX, TX_REPORT2-TX RTP,HIS_REPORT-USB HISR RTP
-			if (pattrib->pkt_rpt_type == C2H_PACKET) {
-				//RTW_INFO("rx C2H_PACKET \n");
-				rtw_hal_c2h_pkt_pre_hdl(padapter,precvframe->u.hdr.rx_data,pattrib->pkt_len);
-			}
-			rtw_free_recvframe(precvframe, pfree_recv_queue);
-		}
-
-#ifdef CONFIG_USB_RX_AGGREGATION
-		/* jaguar 8-byte alignment */
-		pkt_offset = (u16)_RND8(pkt_offset);
-		pkt_cnt--;
-		pbuf += pkt_offset;
-#endif
-		transfer_len -= pkt_offset;
-		precvframe = NULL;
-
-	} while (transfer_len > 0);
-
-_exit_recvbuf2recvframe:
-
-	return _SUCCESS;
-}
-#endif
-
-void rtl8814au_xmit_tasklet(void *priv)
+void rtl8814au_xmit_tasklet(struct tasklet_struct *t)
 {
 	int ret = _FALSE;
-	_adapter *padapter = (_adapter*)priv;
-	struct xmit_priv *pxmitpriv = &padapter->xmitpriv;
+	struct xmit_priv *pxmitpriv = from_tasklet(pxmitpriv, t, xmit_tasklet);
+	_adapter *padapter = pxmitpriv->adapter;
 
 	while(1)
 	{

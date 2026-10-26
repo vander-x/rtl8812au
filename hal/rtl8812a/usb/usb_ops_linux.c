@@ -67,14 +67,6 @@ void interrupt_handler_8812au(_adapter *padapter, u16 pkt_len, u8 *pbuf)
 		if (pHalData->IntArray[0] & (IMR_TBDER_88E | IMR_TBDOK_88E))
 #endif
 		{
-#if 0
-			if (pHalData->IntArray[0] & IMR_BCNDMAINT0_88E)
-				RTW_INFO("%s: HISR_BCNERLY_INT\n", __func__);
-			if (pHalData->IntArray[0] & IMR_TBDOK_88E)
-				RTW_INFO("%s: HISR_TXBCNOK\n", __func__);
-			if (pHalData->IntArray[0] & IMR_TBDER_88E)
-				RTW_INFO("%s: HISR_TXBCNERR\n", __func__);
-#endif
 			rtw_mi_set_tx_beacon_cmd(padapter);
 		}
 #endif /* CONFIG_INTERRUPT_BASED_TXBCN */
@@ -207,11 +199,11 @@ _exit_recvbuf2recvframe:
 }
 
 
-void rtl8812au_xmit_tasklet(void *priv)
+void rtl8812au_xmit_tasklet(struct tasklet_struct *t)
 {
 	int ret = _FALSE;
-	_adapter *padapter = (_adapter *)priv;
-	struct xmit_priv *pxmitpriv = &padapter->xmitpriv;
+	struct xmit_priv *pxmitpriv = from_tasklet(pxmitpriv, t, xmit_tasklet);
+	_adapter *padapter = pxmitpriv->adapter;
 
 	while (1) {
 		if (RTW_CANNOT_TX(padapter)) {

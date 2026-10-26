@@ -44,10 +44,6 @@ void phy_iq_calibrate_8812a(void *dm_void, boolean is_recovery);
  *   */
 void phy_lc_calibrate_8812a(void *dm_void);
 
-#if 0
-void
-phy_digital_predistortion_8812a(void	*adapter);
-#endif
 
 void phy_dp_calibrate_8812a(struct dm_struct *dm);
 

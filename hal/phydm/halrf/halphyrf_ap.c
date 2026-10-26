@@ -880,30 +880,6 @@ odm_txpowertracking_callback_thermal_meter_jaguar_series(
 			}
 		}
 	}
-#if 0
-	/* Query OFDM path A default setting 	Bit[31:21] */
-	ele_D = phy_query_bb_reg(priv, 0xc1c, 0xffe00000);
-	RF_DBG(dm, DBG_RF_TX_PWR_TRACK, "0xc1c:0x%x ([31:21] = 0x%x)\n", phy_query_bb_reg(priv, 0xc1c, MASKDWORD), ele_D);
-	for (i = 0; i < OFDM_TABLE_SIZE_8812; i++) {/* 4 */
-		if (ele_D == ofdm_swing_table_8812[i]) {
-			OFDM_index[0] = (unsigned char)i;
-			RF_DBG(dm, DBG_RF_TX_PWR_TRACK, "OFDM_index[0]=%d\n", OFDM_index[0]);
-			break;
-		}
-	}
-	/* Query OFDM path B default setting */
-	if (rf == 2) {
-		ele_D = phy_query_bb_reg(priv, 0xe1c, 0xffe00000);
-		RF_DBG(dm, DBG_RF_TX_PWR_TRACK, "0xe1c:0x%x ([32:21] = 0x%x)\n", phy_query_bb_reg(priv, 0xe1c, MASKDWORD), ele_D);
-		for (i = 0; i < OFDM_TABLE_SIZE_8812; i++) {
-			if (ele_D == ofdm_swing_table_8812[i]) {
-				OFDM_index[1] = (unsigned char)i;
-				RF_DBG(dm, DBG_RF_TX_PWR_TRACK, "OFDM_index[1]=%d\n", OFDM_index[1]);
-				break;
-			}
-		}
-	}
-#endif
 	/* Initialize */
 	if (!priv->pshare->thermal_value) {
 		priv->pshare->thermal_value = priv->pmib->dot11RFEntry.ther;

@@ -875,14 +875,6 @@ struct cfg80211_bss *rtw_cfg80211_inform_bss(_adapter *padapter, struct wlan_net
 		notify_signal = 100 * translate_percentage_to_dbm(pnetwork->network.PhyInfo.SignalStrength); /* dbm */
 	}
 
-#if 0
-	RTW_INFO("bssid: "MAC_FMT"\n", MAC_ARG(pnetwork->network.MacAddress));
-	RTW_INFO("Channel: %d(%d)\n", channel, freq);
-	RTW_INFO("Capability: %X\n", notify_capability);
-	RTW_INFO("Beacon interval: %d\n", notify_interval);
-	RTW_INFO("Signal: %d\n", notify_signal);
-	RTW_INFO("notify_timestamp: %llu\n", notify_timestamp);
-#endif
 
 	/* pbuf = buf; */
 
@@ -945,17 +937,6 @@ struct cfg80211_bss *rtw_cfg80211_inform_bss(_adapter *padapter, struct wlan_net
 #endif /* COMPAT_KERNEL_RELEASE */
 #endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 38) */
 
-#if 0
-	{
-		if (bss->information_elements == bss->proberesp_ies) {
-			if (bss->len_information_elements !=  bss->len_proberesp_ies)
-				RTW_INFO("error!, len_information_elements != bss->len_proberesp_ies\n");
-		} else if (bss->len_information_elements <  bss->len_beacon_ies) {
-			bss->information_elements = bss->beacon_ies;
-			bss->len_information_elements =  bss->len_beacon_ies;
-		}
-	}
-#endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 9, 0)
 	cfg80211_put_bss(wiphy, bss);
 #else
@@ -1191,8 +1172,23 @@ check_bss:
 
 		if (check_fwstate(pmlmepriv, WIFI_MONITOR_STATE) != _TRUE) {
                         struct cfg80211_bss *bss;
-                        bss = cfg80211_get_bss(pwdev->wiphy, NULL, cur_network->network.MacAddress, NULL, 0,
+                        struct ieee80211_channel *chan = NULL;
+                        u32 freq = rtw_ch2freq(cur_network->network.Configuration.DSConfig);
+                        chan = ieee80211_get_channel(pwdev->wiphy, freq);
+
+                        /* Prefer exact (BSSID, SSID) match */
+                        bss = cfg80211_get_bss(pwdev->wiphy, chan,
+                                cur_network->network.MacAddress,
+                                cur_network->network.Ssid.Ssid,
+                                cur_network->network.Ssid.SsidLength,
                                 IEEE80211_BSS_TYPE_ANY, IEEE80211_PRIVACY_ANY);
+
+                        /* Fallback (rare): if not found, try wildcard as before */
+                        if (!bss) {
+                                bss = cfg80211_get_bss(pwdev->wiphy, chan,
+                                        cur_network->network.MacAddress, NULL, 0,
+                                        IEEE80211_BSS_TYPE_ANY, IEEE80211_PRIVACY_ANY);
+                        }
 		#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0) || defined(CONFIG_CFG80211_CONNECT_BSS_ANDROID))
                         cfg80211_connect_bss(wdev_to_ndev(pwdev), cur_network->network.MacAddress, bss
                                 , pmlmepriv->assoc_req + sizeof(struct rtw_ieee80211_hdr_3addr) + 2
@@ -2430,23 +2426,6 @@ exit:
 
 extern int netdev_open(struct net_device *pnetdev);
 
-#if 0
-enum nl80211_iftype {
-	NL80211_IFTYPE_UNSPECIFIED,
-	NL80211_IFTYPE_ADHOC, /* 1 */
-	NL80211_IFTYPE_STATION, /* 2 */
-	NL80211_IFTYPE_AP, /* 3 */
-	NL80211_IFTYPE_AP_VLAN,
-	NL80211_IFTYPE_WDS,
-	NL80211_IFTYPE_MONITOR, /* 6 */
-	NL80211_IFTYPE_MESH_POINT,
-	NL80211_IFTYPE_P2P_CLIENT, /* 8 */
-	NL80211_IFTYPE_P2P_GO, /* 9 */
-	/* keep last */
-	NUM_NL80211_IFTYPES,
-	NL80211_IFTYPE_MAX = NUM_NL80211_IFTYPES - 1
-};
-#endif
 
 #ifdef CONFIG_CONCURRENT_MODE
 extern int netdev_if2_open(struct net_device *pnetdev);
@@ -2581,9 +2560,6 @@ static int cfg80211_rtw_change_iface(struct wiphy *wiphy,
 
 	case NL80211_IFTYPE_MONITOR:
 		networkType = Ndis802_11Monitor;
-#if 0
-		ndev->type = ARPHRD_IEEE80211; /* IEEE 802.11 : 801 */
-#endif
 		ndev->type = ARPHRD_IEEE80211_RADIOTAP; /* IEEE 802.11 + radiotap header : 803 */
 		break;
 	default:
@@ -2785,17 +2761,6 @@ static void _rtw_cfg80211_surveydone_event_callback(_adapter *padapter, struct c
 				rtw_cfg80211_clear_wps_sr_of_non_target_bss(padapter, pnetwork, &target_ssid);
 			rtw_cfg80211_inform_bss(padapter, pnetwork);
 		}
-#if 0
-		/* check ralink testbed RSN IE length */
-		{
-			if (_rtw_memcmp(pnetwork->network.Ssid.Ssid, "Ralink_11n_AP", 13)) {
-				uint ie_len = 0;
-				u8 *p = NULL;
-				p = rtw_get_ie(pnetwork->network.IEs + _BEACON_IE_OFFSET_, _RSN_IE_2_, &ie_len, (pnetwork->network.IELength - _BEACON_IE_OFFSET_));
-				RTW_INFO("ie_len=%d\n", ie_len);
-			}
-		}
-#endif
 		plist = get_next(plist);
 
 	}
@@ -3375,35 +3340,6 @@ static int cfg80211_rtw_set_wiphy_params(struct wiphy *wiphy
 	/* Single-radio adapter: nothing to do with a specific radio index. */
 	(void)radio_idx;
 #endif
-#if 0
-	struct iwm_priv *iwm = wiphy_to_iwm(wiphy);
-
-	if (changed & WIPHY_PARAM_RTS_THRESHOLD &&
-	    (iwm->conf.rts_threshold != wiphy->rts_threshold)) {
-		int ret;
-
-		iwm->conf.rts_threshold = wiphy->rts_threshold;
-
-		ret = iwm_umac_set_config_fix(iwm, UMAC_PARAM_TBL_CFG_FIX,
-				CFG_RTS_THRESHOLD,
-				iwm->conf.rts_threshold);
-		if (ret < 0)
-			return ret;
-	}
-
-	if (changed & WIPHY_PARAM_FRAG_THRESHOLD &&
-	    (iwm->conf.frag_threshold != wiphy->frag_threshold)) {
-		int ret;
-
-		iwm->conf.frag_threshold = wiphy->frag_threshold;
-
-		ret = iwm_umac_set_config_fix(iwm, UMAC_PARAM_TBL_FA_CFG_FIX,
-				CFG_FRAG_THRESHOLD,
-				iwm->conf.frag_threshold);
-		if (ret < 0)
-			return ret;
-	}
-#endif
 	RTW_INFO("%s\n", __func__);
 	return 0;
 }
@@ -3423,10 +3359,6 @@ static int rtw_cfg80211_set_wpa_version(struct security_priv *psecuritypriv, u32
 	if (wpa_version & (NL80211_WPA_VERSION_1 | NL80211_WPA_VERSION_2))
 		psecuritypriv->ndisauthtype = Ndis802_11AuthModeWPAPSK;
 
-#if 0
-	if (wpa_version & NL80211_WPA_VERSION_2)
-		psecuritypriv->ndisauthtype = Ndis802_11AuthModeWPA2PSK;
-#endif
 
 	#ifdef CONFIG_WAPI_SUPPORT
 	if (wpa_version & NL80211_WAPI_VERSION_1)
@@ -4332,32 +4264,6 @@ if(type == NL80211_TX_POWER_FIXED) {
 } else
 	return -EOPNOTSUPP;
 
-#if 0
-	struct iwm_priv *iwm = wiphy_to_iwm(wiphy);
-	int ret;
-
-	switch (type) {
-	case NL80211_TX_POWER_AUTOMATIC:
-		return 0;
-	case NL80211_TX_POWER_FIXED:
-		if (mbm < 0 || (mbm % 100))
-			return -EOPNOTSUPP;
-
-		if (!test_bit(IWM_STATUS_READY, &iwm->status))
-			return 0;
-
-		ret = iwm_umac_set_config_fix(iwm, UMAC_PARAM_TBL_CFG_FIX,
-					      CFG_TX_PWR_LIMIT_USR,
-					      MBM_TO_DBM(mbm) * 2);
-		if (ret < 0)
-			return ret;
-
-		return iwm_tx_power_trigger(iwm);
-	default:
-		IWM_ERR(iwm, "Unsupported power type: %d\n", type);
-		return -EOPNOTSUPP;
-	}
-#endif
 	RTW_INFO("%s\n", __func__);
 	return 0;
 }
@@ -6136,13 +6042,6 @@ static int	cfg80211_rtw_set_txq_params(struct wiphy *wiphy
 	ac = params->queue;
 #endif
 
-#if 0
-	RTW_INFO("ac=%d\n", ac);
-	RTW_INFO("txop=%u\n", params->txop);
-	RTW_INFO("cwmin=%u\n", params->cwmin);
-	RTW_INFO("cwmax=%u\n", params->cwmax);
-	RTW_INFO("aifs=%u\n", params->aifs);
-#endif
 
 	if (is_supported_5g(pmlmeext->cur_wireless_mode) ||
 	    (pmlmeext->cur_wireless_mode & WIRELESS_11_24N))
@@ -6903,12 +6802,6 @@ void rtw_cfg80211_issue_p2p_provision_request(_adapter *padapter, const u8 *buf,
 	if (dump_mgntframe_and_wait_ack(padapter, pmgntframe) != _SUCCESS)
 		RTW_INFO("%s, ack to\n", __func__);
 
-	#if 0
-	if(wps_devicepassword_id == WPS_DPID_REGISTRAR_SPEC) {
-		RTW_INFO("waiting for p2p peer key-in PIN CODE\n");
-		rtw_msleep_os(15000); /* 15 sec for key in PIN CODE, workaround for GS2 before issuing Nego Req. */
-	}
-	#endif
 
 }
 

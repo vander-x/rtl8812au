@@ -348,9 +348,6 @@ void phydm_ra_dynamic_retry_count(void *dm_void)
 	if (!(dm->support_ability & ODM_BB_DYNAMIC_ARFR))
 		return;
 
-#if 0
-	/*PHYDM_DBG(dm, DBG_RA, "dm->pre_b_noisy = %d\n", dm->pre_b_noisy );*/
-#endif
 	if (dm->pre_b_noisy != dm->noisy_decision) {
 		if (dm->noisy_decision) {
 			PHYDM_DBG(dm, DBG_DYN_ARFR, "Noisy Env. RA fallback\n");
@@ -474,22 +471,10 @@ void phydm_c2h_ra_report_handler(void *dm_void, u8 *cmd_buf, u8 cmd_len)
 
 #endif
 
-#if 0
-	/*trigger dynamic rate ID*/
-	if (dm->support_ic_type & (ODM_RTL8812 | ODM_RTL8192E))
-		phydm_update_rate_id(dm, rate, macid);
-#endif
 }
 
 void odm_ra_post_action_on_assoc(void *dm_void)
 {
-#if 0
-	struct dm_struct	*dm = (struct dm_struct *)dm_void;
-
-	dm->h2c_rarpt_connect = 1;
-	phydm_rssi_monitor_check(dm);
-	dm->h2c_rarpt_connect = 0;
-#endif
 }
 
 void phydm_modify_RA_PCR_threshold(void *dm_void, u8 ra_ofst_direc,
@@ -546,9 +531,6 @@ void phydm_update_hal_ra_mask(
 	u32 ratr_bitmap = *ratr_bitmap_lsb_in;
 	u32 ratr_bitmap_msb = *ratr_bitmap_msb_in;
 
-#if 0
-	/*PHYDM_DBG(dm, DBG_RA_MASK, "phydm_rf_type = (( %x )), rf_type = (( %x ))\n", phydm_rf_type, rf_type);*/
-#endif
 	PHYDM_DBG(dm, DBG_RA_MASK,
 		  "Platfoem original RA Mask = (( 0x %x | %x ))\n",
 		  ratr_bitmap_msb, ratr_bitmap);
@@ -648,9 +630,6 @@ void phydm_update_hal_ra_mask(
 		  "wireless_mode= (( 0x%x )), rf_type = (( 0x%x )), BW = (( 0x%x )), MimoPs_en = (( %d )), tx_rate_level= (( 0x%x ))\n",
 		  wireless_mode, rf_type, bw, mimo_ps_enable, tx_rate_level);
 
-#if 0
-	/*PHYDM_DBG(dm, DBG_RA_MASK, "111 Phydm modified RA Mask = (( 0x %x | %x ))\n", ratr_bitmap_msb, ratr_bitmap);*/
-#endif
 
 	*ratr_bitmap_lsb_in = ratr_bitmap;
 	*ratr_bitmap_msb_in = ratr_bitmap_msb;
@@ -2023,63 +2002,6 @@ void phydm_update_rate_id(
 	u8 rate,
 	u8 platform_macid)
 {
-#if 0
-
-	struct dm_struct	*dm = (struct dm_struct *)dm_void;
-	struct ra_table		*ra_tab = &dm->dm_ra_table;
-	u8		current_tx_ss;
-	u8		rate_idx = rate & 0x7f; /*remove bit7 SGI*/
-	enum wireless_set wireless_set;
-	u8		phydm_macid;
-	struct cmn_sta_info	*sta;
-
-#if 0
-	if (rate_idx >= ODM_RATEVHTSS2MCS0) {
-		PHYDM_DBG(dm, DBG_RA, "rate[%d]: (( VHT2SS-MCS%d ))\n",
-			  platform_macid, (rate_idx - ODM_RATEVHTSS2MCS0));
-		/*@dummy for SD4 check patch*/
-	} else if (rate_idx >= ODM_RATEVHTSS1MCS0) {
-		PHYDM_DBG(dm, DBG_RA, "rate[%d]: (( VHT1SS-MCS%d ))\n",
-			  platform_macid, (rate_idx - ODM_RATEVHTSS1MCS0));
-		/*@dummy for SD4 check patch*/
-	} else if (rate_idx >= ODM_RATEMCS0) {
-		PHYDM_DBG(dm, DBG_RA, "rate[%d]: (( HT-MCS%d ))\n",
-			  platform_macid, (rate_idx - ODM_RATEMCS0));
-		/*@dummy for SD4 check patch*/
-	} else {
-		PHYDM_DBG(dm, DBG_RA, "rate[%d]: (( HT-MCS%d ))\n",
-			  platform_macid, rate_idx);
-		/*@dummy for SD4 check patch*/
-	}
-#endif
-
-	phydm_macid = dm->phydm_macid_table[platform_macid];
-	sta = dm->phydm_sta_info[phydm_macid];
-
-	if (is_sta_active(sta)) {
-		wireless_set = sta->support_wireless_set;
-
-		if (dm->rf_type == RF_2T2R || dm->rf_type == RF_2T3R || dm->rf_type == RF_2T4R) {
-			if (wireless_set & WIRELESS_HT) { /*N mode*/
-				if (rate_idx >= ODM_RATEMCS8 && rate_idx <= ODM_RATEMCS15) { /*@2SS mode*/
-
-					sta->ra_info.rate_id  = ARFR_5_RATE_ID;
-					PHYDM_DBG(dm, DBG_RA, "ARFR_5\n");
-				}
-			} else if (wireless_set & WIRELESS_VHT) {/*@AC mode*/
-				if (rate_idx >= ODM_RATEVHTSS2MCS0 && rate_idx <= ODM_RATEVHTSS2MCS9) {/*@2SS mode*/
-
-					sta->ra_info.rate_id  = ARFR_0_RATE_ID;
-					PHYDM_DBG(dm, DBG_RA, "ARFR_0\n");
-				}
-			} else
-				sta->ra_info.rate_id  = ARFR_0_RATE_ID;
-
-			PHYDM_DBG(dm, DBG_RA, "UPdate_RateID[%d]: (( 0x%x ))\n",
-				  platform_macid, sta->ra_info.rate_id);
-		}
-	}
-#endif
 }
 
 #endif

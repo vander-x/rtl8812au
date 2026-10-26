@@ -527,11 +527,6 @@ static void SetBcnCtrlReg(
 	RegBcnCtrlVal |= SetBits;
 	RegBcnCtrlVal &= ~ClearBits;
 
-#if 0
-	/* #ifdef CONFIG_SDIO_HCI */
-	if (pHalData->sdio_himr & (SDIO_HIMR_TXBCNOK_MSK | SDIO_HIMR_TXBCNERR_MSK))
-		RegBcnCtrlVal |= EN_TXBCN_RPT;
-#endif
 	rtw_write8(padapter, REG_BCN_CTRL, RegBcnCtrlVal);
 }
 
@@ -972,13 +967,6 @@ int _CheckWLANFwPatchBTFwReady_8821A( PADAPTER	Adapter )
 	// Reset beacon setting to the initial value.
 	//---------------------------------------------------------
 #if (DEV_BUS_TYPE == RT_SDIO_INTERFACE)
-#if 0
-		if(!Adapter->MgntInfo.bWiFiConfg)
-		{
-			txpktbuf_bndy = TX_PAGE_BOUNDARY_8821;
-		}
-		else
-#endif
 		{// for WMM
 			txpktbuf_bndy = WMM_NORMAL_TX_PAGE_BOUNDARY_8821;
 		}
@@ -1493,286 +1481,6 @@ hal_GetChnlGroup8814A(
 	return bIn24G;
 }
 
-#if 0
-static void
-hal_ReadPowerValueFromPROM8814A(
-	IN	PADAPTER 		Adapter,
-	IN	PTxPowerInfo24G	pwrInfo24G,
-	IN	PTxPowerInfo5G	pwrInfo5G,
-	IN	u8*				PROMContent,
-	IN	BOOLEAN			AutoLoadFail
-	)
-{
-	HAL_DATA_TYPE	*pHalData = GET_HAL_DATA(Adapter);
-	u32 rfPath, eeAddr=EEPROM_TX_PWR_INX_8814, group,TxCount=0;
-	
-	_rtw_memset(pwrInfo24G, 0, sizeof(TxPowerInfo24G));
-	_rtw_memset(pwrInfo5G, 0, sizeof(TxPowerInfo5G));
-
-	/* RTW_INFO("hal_ReadPowerValueFromPROM8814A(): PROMContent[0x%x]=0x%x\n", (eeAddr+1), PROMContent[eeAddr+1]); */
-	if(0xFF == PROMContent[eeAddr+1])  //YJ,add,120316
-		AutoLoadFail = _TRUE;
-
-	if(AutoLoadFail)
-	{
-		RTW_INFO("hal_ReadPowerValueFromPROM8814A(): Use Default value!\n");
-		for(rfPath = 0 ; rfPath < MAX_RF_PATH ; rfPath++)
-		{
-			// 2.4G default value
-			for(group = 0 ; group < MAX_CHNL_GROUP_24G; group++)
-			{
-				pwrInfo24G->IndexCCK_Base[rfPath][group] =	EEPROM_DEFAULT_24G_INDEX;
-				pwrInfo24G->IndexBW40_Base[rfPath][group] =	EEPROM_DEFAULT_24G_INDEX;
-			}
-			for(TxCount=0;TxCount<MAX_TX_COUNT;TxCount++)
-			{
-				if(TxCount==0)
-				{
-					pwrInfo24G->BW20_Diff[rfPath][0] =	EEPROM_DEFAULT_24G_HT20_DIFF;
-					pwrInfo24G->OFDM_Diff[rfPath][0] =	EEPROM_DEFAULT_24G_OFDM_DIFF;
-				}
-				else
-				{
-					pwrInfo24G->BW20_Diff[rfPath][TxCount] =	EEPROM_DEFAULT_DIFF;
-					pwrInfo24G->BW40_Diff[rfPath][TxCount] =	EEPROM_DEFAULT_DIFF;
-					pwrInfo24G->CCK_Diff[rfPath][TxCount] =	EEPROM_DEFAULT_DIFF;
-					pwrInfo24G->OFDM_Diff[rfPath][TxCount] =	EEPROM_DEFAULT_DIFF;
-				}
-			}	
-
-			// 5G default value
-			for(group = 0 ; group < MAX_CHNL_GROUP_5G; group++)
-			{
-				pwrInfo5G->IndexBW40_Base[rfPath][group] =		EEPROM_DEFAULT_5G_INDEX;
-			}
-			
-			for(TxCount=0;TxCount<MAX_TX_COUNT;TxCount++)
-			{
-				if(TxCount==0)
-				{
-					pwrInfo5G->OFDM_Diff[rfPath][0] =	EEPROM_DEFAULT_5G_OFDM_DIFF;
-					pwrInfo5G->BW20_Diff[rfPath][0] =	EEPROM_DEFAULT_5G_HT20_DIFF;
-					pwrInfo5G->BW80_Diff[rfPath][0] =	EEPROM_DEFAULT_DIFF;
-					pwrInfo5G->BW160_Diff[rfPath][0] =	EEPROM_DEFAULT_DIFF;
-				}
-				else
-				{
-					pwrInfo5G->OFDM_Diff[rfPath][TxCount] =	EEPROM_DEFAULT_DIFF;
-					pwrInfo5G->BW20_Diff[rfPath][TxCount] =	EEPROM_DEFAULT_DIFF;
-					pwrInfo5G->BW40_Diff[rfPath][TxCount]=	EEPROM_DEFAULT_DIFF;
-					pwrInfo5G->BW80_Diff[rfPath][TxCount]=	EEPROM_DEFAULT_DIFF;
-					pwrInfo5G->BW160_Diff[rfPath][TxCount] =	EEPROM_DEFAULT_DIFF;
-
-				}
-			}	
-			
-		}
-		
-		//pHalData->bNOPG = _TRUE;				
-		return;
-	}
-
-	for(rfPath = 0 ; rfPath < MAX_RF_PATH ; rfPath++)
-	{
-		// 2.4G default value
-		for(group = 0 ; group < MAX_CHNL_GROUP_24G; group++)
-		{
-			pwrInfo24G->IndexCCK_Base[rfPath][group] =	PROMContent[eeAddr++];
-			if(pwrInfo24G->IndexCCK_Base[rfPath][group] == 0xFF)
-			{
-				pwrInfo24G->IndexCCK_Base[rfPath][group] = EEPROM_DEFAULT_24G_INDEX;
-			}
-			/* RTW_INFO("8814-2G RF-%d-G-%d CCK-Addr-%x BASE=%x\n", 
-				rfPath, group, eeAddr-1, pwrInfo24G->IndexCCK_Base[rfPath][group]); */
-		}
-		for(group = 0 ; group < MAX_CHNL_GROUP_24G-1; group++)
-		{
-			pwrInfo24G->IndexBW40_Base[rfPath][group] =	PROMContent[eeAddr++];
-			if(pwrInfo24G->IndexBW40_Base[rfPath][group] == 0xFF)
-				pwrInfo24G->IndexBW40_Base[rfPath][group] =	EEPROM_DEFAULT_24G_INDEX;
-			/* RTW_INFO("8814-2G RF-%d-G-%d BW40-Addr-%x BASE=%x\n", 
-				rfPath, group, eeAddr-1, pwrInfo24G->IndexBW40_Base[rfPath][group]); */
-		}
-		for(TxCount=0;TxCount<MAX_TX_COUNT;TxCount++)
-		{
-			if(TxCount==0)
-			{
-				pwrInfo24G->BW40_Diff[rfPath][TxCount] = 0;
-
-				{
-					pwrInfo24G->BW20_Diff[rfPath][TxCount] =	(PROMContent[eeAddr]&0xf0)>>4;				
-				 	if(pwrInfo24G->BW20_Diff[rfPath][TxCount] & BIT3)		//4bit sign number to 8 bit sign number
-						pwrInfo24G->BW20_Diff[rfPath][TxCount] |= 0xF0;
-				}
-				/* RTW_INFO("8814-2G RF-%d-SS-%d BW20-Addr-%x DIFF=%d\n", 
-					rfPath, TxCount, eeAddr, pwrInfo24G->BW20_Diff[rfPath][TxCount]); */
-
-				{
-					pwrInfo24G->OFDM_Diff[rfPath][TxCount] =	(PROMContent[eeAddr]&0x0f);					
-					if(pwrInfo24G->OFDM_Diff[rfPath][TxCount] & BIT3)		//4bit sign number to 8 bit sign number
-						pwrInfo24G->OFDM_Diff[rfPath][TxCount] |= 0xF0;
-				}
-				/* RTW_INFO("8814-2G RF-%d-SS-%d LGOD-Addr-%x DIFF=%d\n", 
-					rfPath, TxCount, eeAddr, pwrInfo24G->OFDM_Diff[rfPath][TxCount]); */
-
-				pwrInfo24G->CCK_Diff[rfPath][TxCount] = 0;
-				eeAddr++;
-			}
-			else
-			{				
-
-				{
-					pwrInfo24G->BW40_Diff[rfPath][TxCount] =	(PROMContent[eeAddr]&0xf0)>>4;				
-					if(pwrInfo24G->BW40_Diff[rfPath][TxCount] & BIT3)		//4bit sign number to 8 bit sign number
-						pwrInfo24G->BW40_Diff[rfPath][TxCount] |= 0xF0;
-				}
-				/* RTW_INFO("8814-2G RF-%d-SS-%d BW40-Addr-%x DIFF=%d\n", 
-					rfPath, TxCount, eeAddr, pwrInfo24G->BW40_Diff[rfPath][TxCount]); */
-
-
-				{
-					pwrInfo24G->BW20_Diff[rfPath][TxCount] =	(PROMContent[eeAddr]&0x0f);				
-					if(pwrInfo24G->BW20_Diff[rfPath][TxCount] & BIT3)		//4bit sign number to 8 bit sign number
-						pwrInfo24G->BW20_Diff[rfPath][TxCount] |= 0xF0;
-				}
-				/* RTW_INFO("8814-2G RF-%d-SS-%d BW20-Addr-%x DIFF=%d\n", 
-					rfPath, TxCount, eeAddr, pwrInfo24G->BW20_Diff[rfPath][TxCount]); */
-
-				eeAddr++;
-				
-
-				{
-					pwrInfo24G->OFDM_Diff[rfPath][TxCount] =	(PROMContent[eeAddr]&0xf0)>>4;				
-					if(pwrInfo24G->OFDM_Diff[rfPath][TxCount] & BIT3)		//4bit sign number to 8 bit sign number
-						pwrInfo24G->OFDM_Diff[rfPath][TxCount] |= 0xF0;
-				}
-				/* RTW_INFO("8814-2G RF-%d-SS-%d LGOD-Addr-%x DIFF=%d\n", 
-					rfPath, TxCount, eeAddr, pwrInfo24G->BW20_Diff[rfPath][TxCount]); */
-
-
-				{
-					pwrInfo24G->CCK_Diff[rfPath][TxCount] =	(PROMContent[eeAddr]&0x0f);				
-					if(pwrInfo24G->CCK_Diff[rfPath][TxCount] & BIT3)		//4bit sign number to 8 bit sign number
-						pwrInfo24G->CCK_Diff[rfPath][TxCount] |= 0xF0;
-				}
-				/* RTW_INFO("8814-2G RF-%d-SS-%d CCK-Addr-%x DIFF=%d\n", 
-					rfPath, TxCount, eeAddr, pwrInfo24G->CCK_Diff[rfPath][TxCount]); */
-
-				eeAddr++;
-			}
-		}
-
-		//5G default value
-		for(group = 0 ; group < MAX_CHNL_GROUP_5G; group++)
-		{
-			pwrInfo5G->IndexBW40_Base[rfPath][group] =		PROMContent[eeAddr++];
-			if(pwrInfo5G->IndexBW40_Base[rfPath][group] == 0xFF)
-				pwrInfo5G->IndexBW40_Base[rfPath][group] = EEPROM_DEFAULT_DIFF;												
-
-			/* RTW_INFO("8814-5G RF-%d-G-%d BW40-Addr-%x BASE=%x\n", 
-				rfPath, TxCount, eeAddr-1, pwrInfo5G->IndexBW40_Base[rfPath][group]); */
-		}
-		
-		for(TxCount=0;TxCount<MAX_TX_COUNT;TxCount++)
-		{
-			if(TxCount==0)
-			{
-				pwrInfo5G->BW40_Diff[rfPath][TxCount]=	 0;				
-			
-
-				{
-					pwrInfo5G->BW20_Diff[rfPath][0] =	(PROMContent[eeAddr]&0xf0)>>4;				
-					if(pwrInfo5G->BW20_Diff[rfPath][TxCount] & BIT3)		//4bit sign number to 8 bit sign number
-						pwrInfo5G->BW20_Diff[rfPath][TxCount] |= 0xF0;		
-				}
-				/* RTW_INFO("8814-5G RF-%d-SS-%d BW20-Addr-%x DIFF=%d\n", 
-					rfPath, TxCount, eeAddr, pwrInfo5G->BW20_Diff[rfPath][TxCount]); */
-
-
-				{
-					pwrInfo5G->OFDM_Diff[rfPath][0] =	(PROMContent[eeAddr]&0x0f);				
-					if(pwrInfo5G->OFDM_Diff[rfPath][TxCount] & BIT3)		//4bit sign number to 8 bit sign number
-						pwrInfo5G->OFDM_Diff[rfPath][TxCount] |= 0xF0;								
-				}
-				/* RTW_INFO("8814-5G RF-%d-SS-%d LGOD-Addr-%x DIFF=%d\n", 
-					rfPath, TxCount, eeAddr, pwrInfo5G->OFDM_Diff[rfPath][TxCount]); */
-
-				eeAddr++;
-			}
-			else
-			{
-
-				{
-					pwrInfo5G->BW40_Diff[rfPath][TxCount]=	 (PROMContent[eeAddr]&0xf0)>>4;					
-					if(pwrInfo5G->BW40_Diff[rfPath][TxCount] & BIT3)		//4bit sign number to 8 bit sign number
-					pwrInfo5G->BW40_Diff[rfPath][TxCount] |= 0xF0;	
-				}
-				/* RTW_INFO("8814-5G RF-%d-SS-%d BW40-Addr-%x DIFF=%d\n", 
-					rfPath, TxCount, eeAddr, pwrInfo5G->BW40_Diff[rfPath][TxCount]); */
-				
-
-				{
-					pwrInfo5G->BW20_Diff[rfPath][TxCount] = (PROMContent[eeAddr]&0x0f);				
-					if(pwrInfo5G->BW20_Diff[rfPath][TxCount] & BIT3)		//4bit sign number to 8 bit sign number
-					pwrInfo5G->BW20_Diff[rfPath][TxCount] |= 0xF0;					
-				}
-				/* RTW_INFO("8814-5G RF-%d-SS-%d BW20-Addr-%x DIFF=%d\n", 
-					rfPath, TxCount, eeAddr, pwrInfo5G->BW20_Diff[rfPath][TxCount]); */
-				
-				eeAddr++;
-			}
-		}	
-
-
-		{
-			pwrInfo5G->OFDM_Diff[rfPath][1] =	(PROMContent[eeAddr]&0xf0)>>4;
-			pwrInfo5G->OFDM_Diff[rfPath][2] =	(PROMContent[eeAddr]&0x0f);
-		}
-		/* RTW_INFO("8814-5G RF-%d-SS-%d LGOD-Addr-%x DIFF=%d\n", 
-			rfPath, 2, eeAddr, pwrInfo5G->OFDM_Diff[rfPath][2]); */
-		eeAddr++;		
-
-
-			pwrInfo5G->OFDM_Diff[rfPath][3] =	(PROMContent[eeAddr]&0x0f);
-
-		/* RTW_INFO("8814-5G RF-%d-SS-%d LGOD-Addr-%x DIFF=%d\n", 
-			rfPath, 3, eeAddr, pwrInfo5G->OFDM_Diff[rfPath][3]); */
-		eeAddr++;
-		
-		for(TxCount=1;TxCount<MAX_TX_COUNT;TxCount++)
-		{
-			if(pwrInfo5G->OFDM_Diff[rfPath][TxCount] & BIT3)		//4bit sign number to 8 bit sign number
-				pwrInfo5G->OFDM_Diff[rfPath][TxCount] |= 0xF0;			
-
-			/* RTW_INFO("8814-5G RF-%d-SS-%d LGOD-Addr-%x DIFF=%d\n", 
-				rfPath, TxCount, eeAddr, pwrInfo5G->OFDM_Diff[rfPath][TxCount]); */
-		}	
-		
-		for(TxCount=0;TxCount<MAX_TX_COUNT;TxCount++)
-		{		
-
-			{
-				pwrInfo5G->BW80_Diff[rfPath][TxCount] =	(PROMContent[eeAddr]&0xf0)>>4;			
-				if(pwrInfo5G->BW80_Diff[rfPath][TxCount] & BIT3)		//4bit sign number to 8 bit sign number
-					pwrInfo5G->BW80_Diff[rfPath][TxCount] |= 0xF0;			
-			}
-			/* RTW_INFO("8814-5G RF-%d-SS-%d BW80-Addr-%x DIFF=%d\n", 
-				rfPath, TxCount, eeAddr, pwrInfo5G->BW80_Diff[rfPath][TxCount]); */
-			
-
-			{
-				pwrInfo5G->BW160_Diff[rfPath][TxCount]=	(PROMContent[eeAddr]&0x0f);			
-				if(pwrInfo5G->BW160_Diff[rfPath][TxCount] & BIT3)		//4bit sign number to 8 bit sign number
-					pwrInfo5G->BW160_Diff[rfPath][TxCount] |= 0xF0;						
-			}
-			/* RTW_INFO("8814-5G RF-%d-SS-%d BW160-Addr-%x DIFF=%d\n", 
-				rfPath, TxCount, eeAddr, pwrInfo5G->BW160_Diff[rfPath][TxCount]); */
-			eeAddr++;
-		}
-	}
-
-}
-#endif
 
 VOID
 HALBT_InitHalVars(
@@ -1802,15 +1510,6 @@ BT_InitHalVars(
 
 	// HALBT_InitHalVars() must be called first
 	HALBT_InitHalVars(Adapter);
-#if 0
-	// called after HALBT_InitHalVars()
-	bBtExist = HALBT_GetBtExist(Adapter);
-	EXhalbtcoutsrc_SetBtExist(bBtExist);
-	chipType = HALBT_GetBtChipType(Adapter);
-	EXhalbtcoutsrc_SetChipType(chipType);
-	antNum = HALBT_GetPgAntNum(Adapter);
-	EXhalbtcoutsrc_SetAntNum(BT_COEX_ANT_TYPE_PG, antNum);
-#endif
 }
 
 
@@ -1934,18 +1633,6 @@ hal_ReadTxPowerInfo8814A(
 			pHalData->BW40_5G_Diff[rfPath][TxCount]=pwrInfo5G.BW40_Diff[rfPath][TxCount];
 			pHalData->BW80_5G_Diff[rfPath][TxCount]=pwrInfo5G.BW80_Diff[rfPath][TxCount];
 //#if DBG
-#if 0
-			RTW_INFO("--------------------------------------- 2.4G ---------------------------------------\n");
-			RTW_INFO("CCK_24G_Diff[%d][%d]= %d\n",rfPath,TxCount,pHalData->CCK_24G_Diff[rfPath][TxCount]);
-			RTW_INFO("OFDM_24G_Diff[%d][%d]= %d\n",rfPath,TxCount,pHalData->OFDM_24G_Diff[rfPath][TxCount]);
-			RTW_INFO("BW20_24G_Diff[%d][%d]= %d\n",rfPath,TxCount,pHalData->BW20_24G_Diff[rfPath][TxCount]);
-			RTW_INFO("BW40_24G_Diff[%d][%d]= %d\n",rfPath,TxCount,pHalData->BW40_24G_Diff[rfPath][TxCount]);
-			RTW_INFO("---------------------------------------- 5G ----------------------------------------\n");
-			RTW_INFO("OFDM_5G_Diff[%d][%d]= %d\n",rfPath,TxCount,pHalData->OFDM_5G_Diff[rfPath][TxCount]);
-			RTW_INFO("BW20_5G_Diff[%d][%d]= %d\n",rfPath,TxCount,pHalData->BW20_5G_Diff[rfPath][TxCount]);
-			RTW_INFO("BW40_5G_Diff[%d][%d]= %d\n",rfPath,TxCount,pHalData->BW40_5G_Diff[rfPath][TxCount]);
-			RTW_INFO("BW80_5G_Diff[%d][%d]= %d\n",rfPath,TxCount,pHalData->BW80_5G_Diff[rfPath][TxCount]);
-#endif							
 		}
 	}
 
@@ -4744,13 +4431,6 @@ static void hw_var_set_monitor(PADAPTER Adapter, u8 variable, u8 *val)
 		/* Append FCS */
 		rcr_bits |= RCR_APPFCS;
 
-		#if 0
-		/* 
-		   CRC and ICV packet will drop in recvbuf2recvframe()
-		   We no turn on it.
-		 */
-		rcr_bits |= (RCR_ACRC32 | RCR_AICV);
-		#endif
 
 		/* Receive all data frames */
 		value_rxfltmap2 = 0xFFFF;
@@ -4760,10 +4440,6 @@ static void hw_var_set_monitor(PADAPTER Adapter, u8 variable, u8 *val)
 
 		rtw_write16(Adapter, REG_RXFLTMAP2, value_rxfltmap2);
 
-		#if 0
-		/* tx pause */
-		rtw_write8(padapter, REG_TXPAUSE, 0xFF);
-		#endif
 	} else {
 		/* do nothing */
 	}
@@ -5963,21 +5639,6 @@ u8 SetHwReg8814A(PADAPTER padapter, u8 variable, u8 *pval)
 		case HW_VAR_EFUSE_BYTES:
 			pHalData->EfuseUsedBytes = *(u16*)pval;
 			break;
-#if 0
-		case HW_VAR_EFUSE_BT_USAGE:
-#ifdef HAL_EFUSE_MEMORY
-			pHalData->EfuseHal.BTEfuseUsedPercentage = *pval;
-#endif //HAL_EFUSE_MEMORY
-			break;
-
-		case HW_VAR_EFUSE_BT_BYTES:
-#ifdef HAL_EFUSE_MEMORY
-			pHalData->EfuseHal.BTEfuseUsedBytes = *(u16*)pval;
-#else //HAL_EFUSE_MEMORY
-			BTEfuseUsedBytes = *(u16*)pval;
-#endif //HAL_EFUSE_MEMORY
-			break;
-#endif //0
 		case HW_VAR_FIFO_CLEARN_UP:
 			{
 				struct pwrctrl_priv *pwrpriv;

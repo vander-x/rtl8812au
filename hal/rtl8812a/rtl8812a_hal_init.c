@@ -4169,13 +4169,6 @@ static void hw_var_set_monitor(PADAPTER Adapter, u8 variable, u8 *val)
 		rcr_bits |= RCR_APPFCS;
 		rcr_bits |= RCR_ACRC32 | RCR_AICV; // accept CRC/ICV-error frames (chip-level gate)
 #endif
-#if 0
-		/*
-		   CRC and ICV packet will drop in recvbuf2recvframe()
-		   We no turn on it.
-		 */
-		rcr_bits |= (RCR_ACRC32 | RCR_AICV);
-#endif
 
 		rtw_hal_get_hwreg(Adapter, HW_VAR_RCR, (u8 *)&pHalData->rcr_backup);
 		rtw_hal_set_hwreg(Adapter, HW_VAR_RCR, (u8 *)&rcr_bits);
@@ -4186,10 +4179,6 @@ static void hw_var_set_monitor(PADAPTER Adapter, u8 variable, u8 *val)
 		rtw_write16(Adapter, REG_RXFLTMAP1, value_rxfltmap2);
 		rtw_write16(Adapter, REG_RXFLTMAP2, value_rxfltmap2);
 
-#if 0
-		/* tx pause */
-		rtw_write8(padapter, REG_TXPAUSE, 0xFF);
-#endif
 	} else {
 		/* do nothing */
 	}
@@ -4823,11 +4812,6 @@ u8 SetHwReg8812A(PADAPTER padapter, u8 variable, u8 *pval)
 	}
 	break;
 #endif /* CONFIG_80211N_HT */
-#if 0
-	case HW_VAR_RXDMA_AGG_PG_TH:
-		rtw_write8(padapter, REG_RXDMA_AGG_PG_TH, *pval);
-		break;
-#endif
 	case HW_VAR_H2C_FW_PWRMODE: {
 		u8 psmode = *pval;
 

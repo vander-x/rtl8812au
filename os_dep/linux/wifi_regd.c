@@ -102,70 +102,6 @@ static const struct ieee80211_regdomain rtw_regdom_rd = {
 	}
 };
 
-#if 0
-static const struct ieee80211_regdomain rtw_regdom_11 = {
-	.n_reg_rules = 1,
-	.alpha2 = "99",
-	.reg_rules = {
-		RTW_2GHZ_CH01_11,
-		RTW_2GHZ_CH12_13
-	}
-};
-
-static const struct ieee80211_regdomain rtw_regdom_12_13 = {
-	.n_reg_rules = 2,
-	.alpha2 = "99",
-	.reg_rules = {
-		RTW_2GHZ_CH01_11,
-		RTW_2GHZ_CH12_13,
-	}
-};
-
-static const struct ieee80211_regdomain rtw_regdom_no_midband = {
-	.n_reg_rules = 3,
-	.alpha2 = "99",
-	.reg_rules = {
-		RTW_2GHZ_CH01_11,
-		RTW_5GHZ_5150_5350,
-		RTW_5GHZ_5725_5850,
-	}
-};
-
-static const struct ieee80211_regdomain rtw_regdom_60_64 = {
-	.n_reg_rules = 3,
-	.alpha2 = "99",
-	.reg_rules = {
-		RTW_2GHZ_CH01_11,
-		RTW_2GHZ_CH12_13,
-		RTW_5GHZ_5725_5850,
-	}
-};
-
-static const struct ieee80211_regdomain rtw_regdom_14_60_64 = {
-	.n_reg_rules = 4,
-	.alpha2 = "99",
-	.reg_rules = {
-		RTW_2GHZ_CH01_11,
-		RTW_2GHZ_CH12_13,
-		RTW_2GHZ_CH14,
-		RTW_5GHZ_5725_5850,
-	}
-};
-
-static const struct ieee80211_regdomain rtw_regdom_14 = {
-	.n_reg_rules = 3,
-	.alpha2 = "99",
-	.reg_rules = {
-		RTW_2GHZ_CH01_11,
-		RTW_2GHZ_CH12_13,
-		RTW_2GHZ_CH14,
-	}
-};
-
-#endif
-#if 0
-static struct rtw_regulatory *rtw_regd;
-#endif
 
 #if 0 /* not_yet */
 static void _rtw_reg_apply_beaconing_flags(struct wiphy *wiphy,
@@ -447,20 +383,6 @@ static struct country_code_to_enum_rd *_rtw_regd_find_country(u16 countrycode)
 
 int rtw_regd_init(struct wiphy *wiphy)
 {
-#if 0
-	if (rtw_regd == NULL) {
-		rtw_regd = (struct rtw_regulatory *)
-			   rtw_malloc(sizeof(struct rtw_regulatory));
-
-		rtw_regd->alpha2[0] = '9';
-		rtw_regd->alpha2[1] = '9';
-
-		rtw_regd->country_code = COUNTRY_CODE_USER;
-	}
-
-	RTW_INFO("%s: Country alpha2 being used: %c%c\n",
-		 __func__, rtw_regd->alpha2[0], rtw_regd->alpha2[1]);
-#endif
 
 	_rtw_regd_init_wiphy(NULL, wiphy);
 

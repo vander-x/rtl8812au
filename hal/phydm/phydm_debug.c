@@ -667,12 +667,6 @@ void phydm_bb_hw_dbg_info_ac(void *dm_void, u32 *_used, char *output,
 	/*@ [VHT SIG B] ====================================================*/
 		value32 = odm_get_bb_reg(dm, R_0xf34, MASKDWORD);
 
-		#if 0
-		v_length = (u16)(value32 & 0x1fffff);
-		vbrsv = (u8)((value32 & 0x600000) >> 21);
-		vb_tail = (u16)((value32 & 0x1f800000) >> 23);
-		vbcrc = (u8)((value32 & 0x80000000) >> 31);
-		#endif
 
 		PDM_SNPF(out_len, used, output + used, out_len - used,
 			 "\r\n %-35s", "VHT-SIG-B");
@@ -680,12 +674,6 @@ void phydm_bb_hw_dbg_info_ac(void *dm_void, u32 *_used, char *output,
 			 "\r\n %-35s = %x",
 			 "Codeword", value32);
 
-		#if 0
-		PDM_SNPF(out_len, used, output + used, out_len - used,
-			 "\r\n %-35s = %x / %x / %x / %x",
-			 "length/Rsv/tail/CRC",
-			 v_length, vbrsv, vb_tail, vbcrc);
-		#endif
 	}
 
 	*_used = used;
@@ -4378,25 +4366,6 @@ void phydm_fw_trace_handler(void *dm_void, u8 *cmd_buf, u8 cmd_len)
 	freg_num = (buf_0 & 0xf);
 	c2h_seq = (buf_0 & 0xf0) >> 4;
 
-	#if 0
-	PHYDM_DBG(dm, DBG_FW_TRACE,
-		  "[FW debug message] freg_num = (( %d )), c2h_seq=(( %d ))\n",
-		  freg_num, c2h_seq);
-
-	strncpy(debug_trace_11byte, &cmd_buf[1], (cmd_len - 1));
-	debug_trace_11byte[cmd_len - 1] = '\0';
-	PHYDM_DBG(dm, DBG_FW_TRACE, "[FW debug message] %s\n",
-		  debug_trace_11byte);
-	PHYDM_DBG(dm, DBG_FW_TRACE, "[FW debug message] cmd_len = (( %d ))\n",
-		  cmd_len);
-	PHYDM_DBG(dm, DBG_FW_TRACE, "[FW debug message] c2h_cmd_start=((%d))\n",
-		  dm->c2h_cmd_start);
-
-	PHYDM_DBG(dm, DBG_FW_TRACE, "pre_seq = (( %d )), current_seq=((%d))\n",
-		  dm->pre_c2h_seq, c2h_seq);
-	PHYDM_DBG(dm, DBG_FW_TRACE, "fw_buff_is_enpty = (( %d ))\n",
-		  dm->fw_buff_is_enpty);
-	#endif
 
 	if (c2h_seq != dm->pre_c2h_seq && dm->fw_buff_is_enpty == false) {
 		dm->fw_debug_trace[dm->c2h_cmd_start] = '\0';
@@ -4427,9 +4396,6 @@ void phydm_fw_trace_handler(void *dm_void, u8 *cmd_buf, u8 cmd_len)
 
 		PHYDM_DBG(dm, DBG_FW_TRACE, "[FW DBG Msg] %s\n",
 			  dm->fw_debug_trace);
-#if 0
-		/*@dbg_print("[FW DBG Msg] %s\n", dm->fw_debug_trace);*/
-#endif
 		dm->c2h_cmd_start = 0;
 		dm->fw_buff_is_enpty = true;
 	}

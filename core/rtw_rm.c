@@ -292,16 +292,6 @@ u8 rm_add_nb_req(_adapter *padapter, struct sta_info *psta)
 
 	prm->q.action_code = RM_ACT_NB_REP_REQ;
 
-	#if 0
-	if (pmac) { /* find sta_info according to bssid */
-		pmac += 4; /* skip mac= */
-		if (hwaddr_parse(pmac, bssid) == NULL) {
-			sprintf(pstr(s), "Err: \nincorrect mac format\n");
-			return _FAIL;
-		}
-		psta = rm_get_sta(padapter, 0xff, bssid);
-	}
-	#endif
 
 	/* enquee rmobj */
 	rm_enqueue_rmobj(padapter, prm, _FALSE);
@@ -768,18 +758,6 @@ int rm_recv_radio_mens_req(_adapter *padapter,
 	u8 rmid, update = 0;
 
 
-#if 0
-	/* search existing rm_obj */
-	rmid = psta->cmn.aid << 16
-		| pdiag_body[2] << 8
-		| RM_SLAVE;
-
-	prm = rm_get_rmobj(padapter, rmid);
-	if (prm) {
-		RTW_INFO("RM: Found an exist meas rmid=%u\n", rmid);
-		update = 1;
-	} else
-#endif
 	prm = rm_alloc_rmobj(padapter);
 
 	if (prm == NULL) {

@@ -60,15 +60,6 @@ typedef struct _USB_EXTENSION {
 	USB_HANDLE	    _hDevice;
 	PVOID		    pAdapter;
 
-#if 0
-	USB_ENDPOINT_DESCRIPTOR		_endpACLIn;
-	USB_ENDPOINT_DESCRIPTOR		_endpACLOutHigh;
-	USB_ENDPOINT_DESCRIPTOR		_endpACLOutNormal;
-
-	USB_PIPE        pPipeIn;
-	USB_PIPE        pPipeOutNormal;
-	USB_PIPE        pPipeOutHigh;
-#endif
 
 } USB_EXTENSION, *PUSB_EXTENSION;
 #endif

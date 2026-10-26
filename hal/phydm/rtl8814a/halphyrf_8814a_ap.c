@@ -506,11 +506,6 @@ VOID
 
 }
 
-#if 0
-#define BW_20M 	0
-#define	BW_40M  1
-#define	BW_80M	2
-#endif
 
 VOID
 	phy_LCCalibrate_8814A(

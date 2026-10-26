@@ -877,88 +877,6 @@ USB_AggModeSwitch(
 	IN	PADAPTER			Adapter
 	)
 {
-#if 0
-	HAL_DATA_TYPE	*pHalData = GET_HAL_DATA(Adapter);
-	PMGNT_INFO		pMgntInfo = &(Adapter->MgntInfo);
-
-	//pHalData->UsbRxHighSpeedMode = _FALSE;
-	// How to measure the RX speed? We assume that when traffic is more than 
-	if (pMgntInfo->bRegAggDMEnable == _FALSE)
-	{
-		return;	// Inf not support.
-	}
-	
-	
-	if (pMgntInfo->LinkDetectInfo.bHigherBusyRxTraffic == _TRUE && 
-		pHalData->UsbRxHighSpeedMode == _FALSE)
-	{
-		pHalData->UsbRxHighSpeedMode = _TRUE;
-		RT_TRACE(COMP_INIT, DBG_LOUD, ("UsbAggModeSwitchCheck to HIGH\n"));
-	}
-	else if (pMgntInfo->LinkDetectInfo.bHigherBusyRxTraffic == _FALSE && 
-		pHalData->UsbRxHighSpeedMode == _TRUE)
-	{
-		pHalData->UsbRxHighSpeedMode = _FALSE;
-		RT_TRACE(COMP_INIT, DBG_LOUD, ("UsbAggModeSwitchCheck to LOW\n"));
-	}
-	else
-	{
-		return; 
-	}
-	
-
-#if USB_RX_AGGREGATION_92C
-	if (pHalData->UsbRxHighSpeedMode == _TRUE)	
-	{
-		// 2010/12/10 MH The parameter is tested by SD1 engineer and SD3 channel emulator.
-		// USB mode
-#if (RT_PLATFORM == PLATFORM_LINUX)
-		if (pMgntInfo->LinkDetectInfo.bTxBusyTraffic)
-		{
-			pHalData->RxAggBlockCount	= 16;
-			pHalData->RxAggBlockTimeout	= 7;
-		}
-		else
-#endif
-		{
-			pHalData->RxAggBlockCount	= 40;
-			pHalData->RxAggBlockTimeout	= 5;
-		}
-		// Mix mode
-		pHalData->RxAggPageCount	= 72;
-		pHalData->RxAggPageTimeout	= 6;		
-	}
-	else
-	{
-		// USB mode
-		pHalData->RxAggBlockCount	= pMgntInfo->RegRxAggBlockCount;
-		pHalData->RxAggBlockTimeout	= pMgntInfo->RegRxAggBlockTimeout;	
-		// Mix mode
-		pHalData->RxAggPageCount		= pMgntInfo->RegRxAggPageCount;
-		pHalData->RxAggPageTimeout	= pMgntInfo->RegRxAggPageTimeout;	
-	}
-
-	if (pHalData->RxAggBlockCount > MAX_RX_AGG_BLKCNT)
-		pHalData->RxAggBlockCount = MAX_RX_AGG_BLKCNT;
-#if (OS_WIN_FROM_VISTA(OS_VERSION)) || (RT_PLATFORM == PLATFORM_LINUX)	// do not support WINXP to prevent usbehci.sys BSOD
-	if (IS_WIRELESS_MODE_N_24G(Adapter) || IS_WIRELESS_MODE_N_5G(Adapter))
-	{
-		//
-		// 2010/12/24 MH According to V1012 QC IOT test, XP BSOD happen when running chariot test
-		// with the aggregation dynamic change!! We need to disable the function to prevent it is broken
-		// in usbehci.sys.
-		//
-		usb_AggSettingRxUpdate_8188E(Adapter);
-
-		// 2010/12/27 MH According to designer's suggstion, we can only modify Timeout value. Otheriwse
-		// there might many HW incorrect behavior, the XP BSOD at usbehci.sys may be relative to the 
-		// issue. Base on the newest test, we can not enable block cnt > 30, otherwise XP usbehci.sys may
-		// BSOD.
-	}
-#endif
-	
-#endif
-#endif
 }	// USB_AggModeSwitch
 
 static VOID
@@ -1049,34 +967,6 @@ static VOID _RfPowerSave(
 	IN	PADAPTER		Adapter
 	)
 {
-#if 0
-	HAL_DATA_TYPE	*pHalData	= GET_HAL_DATA(Adapter);
-	PMGNT_INFO		pMgntInfo	= &(Adapter->MgntInfo);
-	u8			eRFPath;
-
-#if (DISABLE_BB_RF)
-	return;
-#endif
-
-	if(pMgntInfo->RegRfOff == _TRUE){ // User disable RF via registry.
-		RT_TRACE((COMP_INIT|COMP_RF), DBG_LOUD, ("InitializeAdapter8192CUsb(): Turn off RF for RegRfOff.\n"));
-		MgntActSet_RF_State(Adapter, eRfOff, RF_CHANGE_BY_SW);
-		// Those action will be discard in MgntActSet_RF_State because off the same state
-		for(eRFPath = 0; eRFPath <pHalData->NumTotalRFPath; eRFPath++)
-			PHY_SetRFReg(Adapter, eRFPath, 0x4, 0xC00, 0x0);
-	}
-	else if(pMgntInfo->RfOffReason > RF_CHANGE_BY_PS){ // H/W or S/W RF OFF before sleep.
-		RT_TRACE((COMP_INIT|COMP_RF), DBG_LOUD, ("InitializeAdapter8192CUsb(): Turn off RF for RfOffReason(%ld).\n", pMgntInfo->RfOffReason));
-		MgntActSet_RF_State(Adapter, eRfOff, pMgntInfo->RfOffReason);
-	}
-	else{
-		pHalData->eRFPowerState = eRfOn;
-		pMgntInfo->RfOffReason = 0; 
-		if(Adapter->bInSetPower || Adapter->bResetInProgress)
-			PlatformUsbEnableInPipes(Adapter);
-		RT_TRACE((COMP_INIT|COMP_RF), DBG_LOUD, ("InitializeAdapter8192CUsb(): RF is on.\n"));
-	}
-#endif
 }
 */
 enum {
@@ -1118,39 +1008,6 @@ HalDetectSelectiveSuspendMode(
 	IN PADAPTER				Adapter
 	)
 {
-#if 0
-	u8	tmpvalue;
-	HAL_DATA_TYPE	*pHalData = GET_HAL_DATA(Adapter);
-	struct dvobj_priv	*pdvobjpriv = adapter_to_dvobj(Adapter);
-
-	// If support HW radio detect, we need to enable WOL ability, otherwise, we 
-	// can not use FW to notify host the power state switch.
-	
-	EFUSE_ShadowRead(Adapter, 1, EEPROM_USB_OPTIONAL1, (u32 *)&tmpvalue);
-
-	DBG_8192C("HalDetectSelectiveSuspendMode(): SS ");
-	if(tmpvalue & BIT1)
-	{
-		DBG_8192C("Enable\n");
-	}
-	else
-	{
-		DBG_8192C("Disable\n");
-		pdvobjpriv->RegUsbSS = _FALSE;
-	}
-
-	// 2010/09/01 MH According to Dongle Selective Suspend INF. We can switch SS mode.
-	if (pdvobjpriv->RegUsbSS && !SUPPORT_HW_RADIO_DETECT(pHalData))
-	{
-		//PMGNT_INFO				pMgntInfo = &(Adapter->MgntInfo);
-
-		//if (!pMgntInfo->bRegDongleSS)	
-		//{
-		//	RT_TRACE(COMP_INIT, DBG_LOUD, ("Dongle disable SS\n"));
-			pdvobjpriv->RegUsbSS = _FALSE;
-		//}
-	}
-#endif
 }	// HalDetectSelectiveSuspendMode
 
 static rt_rf_power_state RfOnOffDetect(IN	PADAPTER pAdapter )
@@ -1174,46 +1031,6 @@ static void _ps_close_RF(_adapter *padapter){
 /*	A lightweight deinit function	*/
 static void rtl8814au_hw_reset(_adapter *Adapter)
 {
-#if 0
-                u8 reg_val=0;
-	if(rtw_read8(Adapter, REG_MCUFWDL)&BIT7)
-	{		
-		_8051Reset8812(Adapter);  
-		rtw_write8(Adapter, REG_MCUFWDL, 0x00);
-		//before BB reset should do clock gated
-		rtw_write32(Adapter, rFPGA0_XCD_RFPara, 
-			rtw_read32(Adapter, rFPGA0_XCD_RFPara)|(BIT6));
-		//reset BB
-		reg_val = rtw_read8(Adapter, REG_SYS_FUNC_EN);
-		reg_val &= ~(BIT(0) | BIT(1));
-		rtw_write8(Adapter, REG_SYS_FUNC_EN, reg_val);
-		//reset RF
-		rtw_write8(Adapter, REG_RF_CTRL, 0);
-		//reset TRX path
-		rtw_write16(Adapter, REG_CR, 0);
-		//reset MAC
-		reg_val = rtw_read8(Adapter, REG_APS_FSMCO+1); 
-		reg_val |= BIT(1);
-		reg_val = rtw_write8(Adapter, REG_APS_FSMCO+1, reg_val);       //reg0x5[1] ,auto FSM off
-
-		reg_val = rtw_read8(Adapter, REG_APS_FSMCO+1);
- 
-		//check if   reg0x5[1] auto cleared
-		while(reg_val & BIT(1)){
-			rtw_udelay_os(1);
-			reg_val = rtw_read8(Adapter, REG_APS_FSMCO+1); 
-		}
-		reg_val |= BIT(0);
-		reg_val = rtw_write8(Adapter, REG_APS_FSMCO+1, reg_val);     //reg0x5[0] ,auto FSM on
-
-		reg_val = rtw_read8(Adapter, REG_SYS_FUNC_EN+1);
-		reg_val &= ~(BIT(4) | BIT(7));
-		rtw_write8(Adapter, REG_SYS_FUNC_EN+1, reg_val);
-		reg_val = rtw_read8(Adapter, REG_SYS_FUNC_EN+1);
-		reg_val |= BIT(4) | BIT(7);
-		rtw_write8(Adapter, REG_SYS_FUNC_EN+1, reg_val);
-	}
-#endif //0
 }
 
 u32 rtl8814au_hal_init(PADAPTER Adapter)

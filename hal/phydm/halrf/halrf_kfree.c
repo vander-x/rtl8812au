@@ -359,10 +359,6 @@ void phydm_set_pa_bias_to_rf_8822b(void *dm_void, u8 e_rf_path, s8 tx_pa_bias)
 	       "[kfree] 8822b 2g rf(0x51)=0x%X rf(0x52)=0x%X path=%d\n",
 	       rf_reg_51, rf_reg_52, e_rf_path);
 
-#if 0
-	/*rf3f => rf52[19:17] = rf3f[2:0] rf52[16:15] = rf3f[4:3] rf52[3:0] = rf3f[8:5]*/
-	/*rf3f => rf51[6:3] = rf3f[12:9] rf52[13] = rf3f[13]*/
-#endif
 	rf_reg_3f = ((rf_reg_52 & 0xe0000) >> 17) |
 		    (((rf_reg_52 & 0x18000) >> 15) << 3) |
 		    ((rf_reg_52 & 0xf) << 5) |
@@ -746,24 +742,6 @@ void phydm_set_kfree_to_rf_8192f(void *dm_void, u8 e_rf_path, u8 channel_idx,
 			      BIT(15) | BIT(14))), e_rf_path, channel_idx);
 }
 
-#if 0
-/*
-void phydm_clear_kfree_to_rf_8192f(void *dm_void, u8 e_rf_path, u8 data)
-{
-	struct dm_struct		*dm = (struct dm_struct *)dm_void;
-	struct dm_rf_calibration_struct	*cali_info = &dm->rf_calibrate_info;
-
-	odm_set_rf_reg(dm, e_rf_path, RF_0x55, BIT(19), (data & BIT(0)));
-	odm_set_rf_reg(dm, e_rf_path, RF_0x55, (BIT(18) | BIT(17) | BIT(16) | BIT(15) | BIT(14)), ((data & 0x1f) >> 1));
-
-	RF_DBG(dm, DBG_RF_MP,
-		"[kfree] 8192F clear power trim 0x55[19:14]=0x%X path=%d\n",
-		odm_get_rf_reg(dm, e_rf_path, RF_0x55, (BIT(19) | BIT(18) | BIT(17) | BIT(16) | BIT(15) | BIT(14))),
-		e_rf_path
-		);
-}
-*/
-#endif
 
 void phydm_get_thermal_trim_offset_8198f(void *dm_void)
 {
@@ -1143,18 +1121,6 @@ void phydm_do_kfree(void *dm_void, u8 channel_to_sw)
 				phydm_clear_kfree_to_rf(dm, rfpath, bb_gain);
 			}
 		}
-#if 0
-		/*else if(dm->support_ic_type & ODM_RTL8192F){
-			if (channel_to_sw >= 1 && channel_to_sw <= 3)
-				channel_idx = 0;
-			if (channel_to_sw >= 4 && channel_to_sw <= 9)
-				channel_idx = 1;
-			if (channel_to_sw >= 9 && channel_to_sw <= 14)
-				channel_idx = 2;
-			for (rfpath = RF_PATH_A;  rfpath < max_path; rfpath++)
-				phydm_clear_kfree_to_rf_8192f(dm, rfpath, pwrtrim->bb_gain[channel_idx][rfpath]);
-		}*/
-#endif
 	}
 }
 
@@ -1182,9 +1148,6 @@ void phydm_config_kfree(void *dm_void, u8 channel_to_sw)
 			       __func__);
 			return;
 		}
-#if 0
-		/*if kfree_table[0] == 0xff, means no Kfree*/
-#endif
 		phydm_do_kfree(dm, channel_to_sw);
 	}
 	RF_DBG(dm, DBG_RF_MP, "<===[kfree] phy_ConfigKFree()\n");

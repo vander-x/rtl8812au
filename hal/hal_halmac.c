@@ -761,11 +761,6 @@ struct halmac_platform_api rtw_halmac_platform_api = {
 #endif /* CONFIG_USB_HCI || CONFIG_PCI_HCI */
 
 	/* Write data */
-#if 0
-	/* impletement in HAL-IC level */
-	.SEND_RSVD_PAGE = sdio_write_data_rsvd_page,
-	.SEND_H2C_PKT = sdio_write_data_h2c,
-#endif
 	/* Memory allocate */
 	.RTL_FREE = _halmac_mfree,
 	.RTL_MALLOC = _halmac_malloc,

@@ -711,11 +711,6 @@ odm_txpowertracking_check(
 )
 {
 
-#if 0
-	/* 2011/09/29 MH In HW integration first stage, we provide 4 different handle to operate */
-	/*  at the same time. In the stage2/3, we need to prive universal interface and merge all */
-	/* HW dynamic mechanism. */
-#endif
 
 	struct dm_struct		*dm = (struct dm_struct *)dm_void;
 	switch	(dm->support_platform) {

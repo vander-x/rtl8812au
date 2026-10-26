@@ -1357,15 +1357,6 @@ u8 rtw_joinbss_cmd(_adapter  *padapter, struct wlan_network *pnetwork)
 		res = _FAIL;
 		goto exit;
 	}
-#if 0
-	/*  for IEs is pointer */
-	t_len = sizeof(ULONG) + sizeof(NDIS_802_11_MAC_ADDRESS) + 2 +
-		sizeof(NDIS_802_11_SSID) + sizeof(ULONG) +
-		sizeof(NDIS_802_11_RSSI) + sizeof(NDIS_802_11_NETWORK_TYPE) +
-		sizeof(NDIS_802_11_CONFIGURATION) +
-		sizeof(NDIS_802_11_NETWORK_INFRASTRUCTURE) +
-		sizeof(NDIS_802_11_RATES_EX) + sizeof(WLAN_PHY_INFO) + sizeof(ULONG) + MAX_IE_SZ;
-#endif
 	/* for IEs is fix buf size */
 	t_len = sizeof(WLAN_BSSID_EX);
 
@@ -1492,14 +1483,6 @@ u8 rtw_joinbss_cmd(_adapter  *padapter, struct wlan_network *pnetwork)
 	rtw_ft_validate_akm_type(padapter, pnetwork);
 #endif
 
-#if 0
-	psecuritypriv->supplicant_ie[0] = (u8)psecnetwork->IELength;
-
-	if (psecnetwork->IELength < (256 - 1))
-		_rtw_memcpy(&psecuritypriv->supplicant_ie[1], &psecnetwork->IEs[0], psecnetwork->IELength);
-	else
-		_rtw_memcpy(&psecuritypriv->supplicant_ie[1], &psecnetwork->IEs[0], (256 - 1));
-#endif
 
 	pcmd->cmdsz = sizeof(WLAN_BSSID_EX);
 
@@ -5646,10 +5629,6 @@ void rtw_create_ibss_post_hdl(_adapter *padapter, int status)
 		/* copy pdev_network information to pmlmepriv->cur_network */
 		_rtw_memcpy(&mlme_cur_network->network, pdev_network, (get_WLAN_BSSID_EX_sz(pdev_network)));
 
-#if 0
-		/* reset DSConfig */
-		mlme_cur_network->network.Configuration.DSConfig = (u32)rtw_ch2freq(pdev_network->Configuration.DSConfig);
-#endif
 
 		_clr_fwstate_(pmlmepriv, _FW_UNDER_LINKING);
 		_exit_critical_bh(&(pmlmepriv->scanned_queue.lock), &irqL);

@@ -251,17 +251,6 @@ void halrf_init_debug_setting(void *dm_void)
 
 	rf->rf_dbg_comp =
 #if DBG
-#if 0
-	/*DBG_RF_TX_PWR_TRACK	|*/
-	/*DBG_RF_IQK		| */
-	/*DBG_RF_LCK		| */
-	/*DBG_RF_DPK		| */
-	/*DBG_RF_DACK		| */
-	/*DBG_RF_TXGAPK		| */
-	/*DBG_RF_MP			| */
-	/*DBG_RF_TMP		| */
-	/*DBG_RF_INIT		| */
-#endif
 #endif
 	0;
 }

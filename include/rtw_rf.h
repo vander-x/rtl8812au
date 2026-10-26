@@ -43,9 +43,6 @@ u8 center_chs_2g(u8 bw, u8 id);
 
 extern u8 center_ch_5g_20m[CENTER_CH_5G_20M_NUM];
 extern u8 center_ch_5g_40m[CENTER_CH_5G_40M_NUM];
-#if 0
-extern u8 center_ch_5g_20m_40m[CENTER_CH_5G_20M_NUM + CENTER_CH_5G_40M_NUM];
-#endif
 extern u8 center_ch_5g_80m[CENTER_CH_5G_80M_NUM];
 extern u8 center_ch_5g_all[CENTER_CH_5G_ALL_NUM];
 

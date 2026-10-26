@@ -3612,9 +3612,6 @@ int  ips_netdrv_open(_adapter *padapter)
 		goto netdev_open_error;
 	}
 #endif
-#if 0
-	rtw_mi_set_mac_addr(padapter);
-#endif
 #ifndef RTW_HALMAC
 	rtw_intf_start(padapter);
 #endif /* !RTW_HALMAC */

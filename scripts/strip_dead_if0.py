@@ -10,9 +10,12 @@ indented), so `#if 0 && SOMETHING` or similar conditional expressions
 are left untouched - the goal is removing unconditionally-dead debug/
 reference code, not changing build configuration.
 
-Does NOT touch #else/#elif inside a dead #if 0 block: the whole
-#if 0 ... #endif, else-branch included, is dead when the top condition
-is a literal 0, so it's all removed together.
+Safety rule: a block is only removed when it has NO #else/#elif at its
+own nesting depth before the matching #endif. `#if 0 ... #else ... #endif`
+means the #else branch is live code (only the #if 0 branch is dead) -
+blindly deleting the whole span would eat real, active code along with
+it. Such blocks (and any block whose #if/#endif pairing looks unbalanced)
+are left untouched for manual review instead of guessing.
 """
 import re
 import sys
@@ -20,6 +23,7 @@ from pathlib import Path
 
 IF_RE = re.compile(r'^\s*#\s*if\s*0\s*$')
 IF_ANY_RE = re.compile(r'^\s*#\s*(if|ifdef|ifndef)\b')
+ELSE_RE = re.compile(r'^\s*#\s*(else|elif)\b')
 ENDIF_RE = re.compile(r'^\s*#\s*endif\b')
 
 
@@ -31,21 +35,22 @@ def strip_file(path: Path) -> int:
     removed = 0
     while i < len(lines):
         if IF_RE.match(lines[i]):
-            # Found a dead block start; find its matching #endif by depth.
             depth = 1
             j = i + 1
+            has_sibling_else = False
             while j < len(lines) and depth > 0:
                 if IF_ANY_RE.match(lines[j]):
                     depth += 1
                 elif ENDIF_RE.match(lines[j]):
                     depth -= 1
+                elif depth == 1 and ELSE_RE.match(lines[j]):
+                    has_sibling_else = True
                 j += 1
-            if depth == 0:
-                # lines[i:j] is the whole dead block (#if 0 .. matching #endif)
+            if depth == 0 and not has_sibling_else:
                 removed += (j - i)
                 i = j
                 continue
-            # Unbalanced (shouldn't happen in valid C) - bail out, keep as-is.
+            # Has a live #else/#elif branch, or unbalanced: leave untouched.
         out.append(lines[i])
         i += 1
     if removed:

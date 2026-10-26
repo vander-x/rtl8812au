@@ -664,7 +664,7 @@ int rtw_android_priv_cmd(struct net_device *net, struct ifreq *ifr, int cmd)
 		goto exit;
 	}
 	#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)) || (RHEL_RELEASE_CODE >= RHEL_RELEASE_VERSION(8,0))
-	if (!access_ok(&priv_cmd.buf, priv_cmd.total_len)) {
+	if (!access_ok(priv_cmd.buf, priv_cmd.total_len)) {
 	#else
 	if (!access_ok(VERIFY_READ, priv_cmd.buf, priv_cmd.total_len)) {
 	#endif
@@ -767,16 +767,6 @@ int rtw_android_priv_cmd(struct net_device *net, struct ifreq *ifr, int cmd)
 		/* TBD: BTCOEXSCAN-STOP */
 		break;
 	case ANDROID_WIFI_CMD_BTCOEXMODE:
-#if 0
-		uint mode = *(command + strlen(CMD_BTCOEXMODE) + 1) - '0';
-		if (mode == 1)
-			net_os_set_packet_filter(net, 0); /* DHCP starts */
-		else
-			net_os_set_packet_filter(net, 1); /* DHCP ends */
-#ifdef WL_CFG80211
-		bytes_written = wl_cfg80211_set_btcoex_dhcp(net, command);
-#endif
-#endif
 		break;
 
 	case ANDROID_WIFI_CMD_SETSUSPENDMODE:

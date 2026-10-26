@@ -64,145 +64,6 @@ void halrf_rf_lna_setting_8812a(
 }
 
 
-#if 0
-
-
-
-/* new element A = element D x X */
-
-/* new element C = element D x Y */
-
-
-void do_iqk_8812a(
-	void		*dm_void,
-	u8		delta_thermal_index,
-	u8		thermal_value,
-	u8		threshold
-)
-{
-	struct dm_struct	*dm = (struct dm_struct *)dm_void;
-#if !(DM_ODM_SUPPORT_TYPE & ODM_AP)
-	void		*adapter = dm->adapter;
-	HAL_DATA_TYPE	*hal_data = GET_HAL_DATA(adapter);
-#endif
-
-	odm_reset_iqk_result(dm);
-
-#if (DM_ODM_SUPPORT_TYPE & ODM_WIN)
-#if (DEV_BUS_TYPE == RT_PCI_INTERFACE)
-#if USE_WORKITEM
-	platform_acquire_mutex(&hal_data->mx_chnl_bw_control);
-#else
-	platform_acquire_spin_lock(adapter, RT_CHANNEL_AND_BANDWIDTH_SPINLOCK);
-#endif
-#elif ((DEV_BUS_TYPE == RT_USB_INTERFACE) || (DEV_BUS_TYPE == RT_SDIO_INTERFACE))
-	platform_acquire_mutex(&hal_data->mx_chnl_bw_control);
-#endif
-#endif
-
-
-	dm->rf_calibrate_info.thermal_value_iqk = thermal_value;
-	phy_iq_calibrate_8812a(adapter, false);
-
-
-#if (DM_ODM_SUPPORT_TYPE & ODM_WIN)
-#if (DEV_BUS_TYPE == RT_PCI_INTERFACE)
-#if USE_WORKITEM
-	platform_release_mutex(&hal_data->mx_chnl_bw_control);
-#else
-	platform_release_spin_lock(adapter, RT_CHANNEL_AND_BANDWIDTH_SPINLOCK);
-#endif
-#elif ((DEV_BUS_TYPE == RT_USB_INTERFACE) || (DEV_BUS_TYPE == RT_SDIO_INTERFACE))
-	platform_release_mutex(&hal_data->mx_chnl_bw_control);
-#endif
-#endif
-}
-
-/*-----------------------------------------------------------------------------
- * Function:	odm_TxPwrTrackSetPwr88E()
- *
- * Overview:	88E change all channel tx power accordign to flag.
- *				OFDM & CCK are all different.
- *
- * Input:		NONE
- *
- * Output:		NONE
- *
- * Return:		NONE
- *
- * Revised History:
- *	When		Who		Remark
- *	04/23/2012	MHC		Create version 0.
- *
- *---------------------------------------------------------------------------*/
-void
-odm_tx_pwr_track_set_pwr8812a(
-	struct dm_struct			*dm,
-	enum pwrtrack_method	method,
-	u8				rf_path,
-	u8				channel_mapped_index
-)
-{
-	if (method == TXAGC) {
-		u8	cck_power_level[MAX_TX_COUNT], ofdm_power_level[MAX_TX_COUNT];
-		u8	bw20_power_level[MAX_TX_COUNT], bw40_power_level[MAX_TX_COUNT];
-		u8	rf = 0;
-		u32	pwr = 0, tx_agc = 0;
-		void *adapter = dm->adapter;
-
-		RF_DBG(dm, DBG_RF_TX_PWR_TRACK, "odm_TxPwrTrackSetPwr88E CH=%d\n", *(dm->channel));
-#if (DM_ODM_SUPPORT_TYPE & (ODM_WIN | ODM_CE))
-
-		pwr = phy_query_bb_reg(adapter, REG_TX_AGC_A_RATE18_06, 0xFF);
-		pwr += (dm->bb_swing_idx_cck - dm->bb_swing_idx_cck_base);
-		tx_agc = (pwr << 16) | (pwr << 8) | (pwr);
-		phy_set_bb_reg(adapter, REG_TX_AGC_A_CCK_1_MCS32, MASKBYTE1, tx_agc);
-		phy_set_bb_reg(adapter, REG_TX_AGC_B_CCK_11_A_CCK_2_11, 0xffffff00, tx_agc);
-		RTPRINT(FPHY, PHY_TXPWR, ("odm_tx_pwr_track_set_pwr88_e: CCK Tx-rf(A) Power = 0x%x\n", tx_agc));
-
-		pwr = phy_query_bb_reg(adapter, REG_TX_AGC_A_RATE18_06, 0xFF);
-		pwr += (dm->bb_swing_idx_ofdm[RF_PATH_A] - dm->bb_swing_idx_ofdm_base);
-		tx_agc |= ((pwr << 24) | (pwr << 16) | (pwr << 8) | pwr);
-		phy_set_bb_reg(adapter, REG_TX_AGC_A_RATE18_06, MASKDWORD, tx_agc);
-		phy_set_bb_reg(adapter, REG_TX_AGC_A_RATE54_24, MASKDWORD, tx_agc);
-		phy_set_bb_reg(adapter, REG_TX_AGC_A_MCS03_MCS00, MASKDWORD, tx_agc);
-		phy_set_bb_reg(adapter, REG_TX_AGC_A_MCS07_MCS04, MASKDWORD, tx_agc);
-		phy_set_bb_reg(adapter, REG_TX_AGC_A_MCS11_MCS08, MASKDWORD, tx_agc);
-		phy_set_bb_reg(adapter, REG_TX_AGC_A_MCS15_MCS12, MASKDWORD, tx_agc);
-		RTPRINT(FPHY, PHY_TXPWR, ("odm_tx_pwr_track_set_pwr88_e: OFDM Tx-rf(A) Power = 0x%x\n", tx_agc));
-#endif
-#if (DM_ODM_SUPPORT_TYPE & ODM_AP)
-		phy_rf6052_set_cck_tx_power(dm->priv, *(dm->channel));
-		phy_rf6052_set_ofdm_tx_power(dm->priv, *(dm->channel));
-#endif
-
-	} else if (method == BBSWING) {
-		/* Adjust BB swing by OFDM IQ matrix */
-		if (rf_path == RF_PATH_A)
-			odm_set_bb_reg(dm, REG_A_TX_SCALE_JAGUAR, MASKDWORD, dm->bb_swing_idx_ofdm[RF_PATH_A]);
-		else if (rf_path == RF_PATH_B)
-			odm_set_bb_reg(dm, REG_B_TX_SCALE_JAGUAR, MASKDWORD, dm->bb_swing_idx_ofdm[RF_PATH_B]);
-	} else
-		return;
-}	/* odm_TxPwrTrackSetPwr88E */
-
-void configure_txpower_track_8812a(
-	struct txpwrtrack_cfg	*config
-)
-{
-	config->swing_table_size_cck = CCK_TABLE_SIZE;
-	config->swing_table_size_ofdm = OFDM_TABLE_SIZE;
-	config->threshold_iqk = 8;
-	config->average_thermal_num = AVG_THERMAL_NUM_8812A;
-	config->rf_path_count = 2;
-	config->thermal_reg_addr = RF_T_METER_8812A;
-
-	config->odm_tx_pwr_track_set_pwr = odm_tx_pwr_track_set_pwr8812a;
-	config->do_iqk = do_iqk_8812a;
-	config->phy_lc_calibrate = phy_lc_calibrate_8812a;
-}
-
-#endif
 
 /* 1 7.	IQK */
 #define MAX_TOLERANCE		5
@@ -257,14 +118,6 @@ phy_path_a_iqk_8812a(
 	else							/* if Tx not OK, ignore Rx */
 		return result;
 
-#if 0
-	if (!(reg_eac & BIT(27)) &&		/* if Tx is OK, check whether Rx is OK */
-	    (((reg_ea4 & 0x03FF0000) >> 16) != 0x132) &&
-	    (((reg_eac & 0x03FF0000) >> 16) != 0x36))
-		result |= 0x02;
-	else
-		RTPRINT(FINIT, INIT_IQK, ("path A Rx IQK fail!!\n"));
-#endif
 
 	return result;
 
@@ -379,14 +232,6 @@ phy_path_a_rx_iqk_8812a(
 	reg_ea4 = odm_get_bb_reg(dm, REG_RX_POWER_BEFORE_IQK_A_2, MASKDWORD);
 	RF_DBG(dm, DBG_RF_IQK, "0xea4 = 0x%x\n", reg_ea4);
 
-#if 0
-	if (!(reg_eac & BIT(28)) &&
-	    (((reg_e94 & 0x03FF0000) >> 16) != 0x142) &&
-	    (((reg_e9c & 0x03FF0000) >> 16) != 0x42))
-		result |= 0x01;
-	else							/* if Tx not OK, ignore Rx */
-		return result;
-#endif
 
 	if (!(reg_eac & BIT(27)) &&		/* if Tx is OK, check whether Rx is OK */
 	    (((reg_ea4 & 0x03FF0000) >> 16) != 0x132) &&
@@ -756,11 +601,6 @@ phy_simularity_compare_8812a(
 		return false;
 
 }
-#if 0
-	#define BW_20M	0
-	#define	BW_40M  1
-	#define	BW_80M	2
-#endif
 
 void _iqk_rx_fill_iqc_8812a(
 	struct dm_struct			*dm,
@@ -1170,20 +1010,6 @@ void _iqk_tx_8812a(
 							odm_write_4byte(dm, 0xcb8, 0x04000000);
 							TX_Y0[cal] = odm_get_bb_reg(dm, R_0xd00, 0x07ff0000) << 21;
 							TX0IQKOK = true;
-#if 0
-							odm_write_4byte(dm, 0xcb8, 0x01000000);
-							reg1 = odm_get_bb_reg(dm, R_0xd00, 0xffffffff);
-							odm_write_4byte(dm, 0xcb8, 0x02000000);
-							reg2 = odm_get_bb_reg(dm, R_0xd00, 0x0000001f);
-							image_power = (reg2 << 32) + reg1;
-							dbg_print("Before PW = %d\n", image_power);
-							odm_write_4byte(dm, 0xcb8, 0x03000000);
-							reg1 = odm_get_bb_reg(dm, R_0xd00, 0xffffffff);
-							odm_write_4byte(dm, 0xcb8, 0x04000000);
-							reg2 = odm_get_bb_reg(dm, R_0xd00, 0x0000001f);
-							image_power = (reg2 << 32) + reg1;
-							dbg_print("After PW = %d\n", image_power);
-#endif
 							break;
 						} else {
 							TX0IQKOK = false;
@@ -1375,20 +1201,6 @@ void _iqk_tx_8812a(
 							odm_write_4byte(dm, 0xcb8, 0x08000000);
 							RX_Y0[cal] = odm_get_bb_reg(dm, R_0xd00, 0x07ff0000) << 21;
 							RX0IQKOK = true;
-#if 0
-							odm_write_4byte(dm, 0xcb8, 0x05000000);
-							reg1 = odm_get_bb_reg(dm, R_0xd00, 0xffffffff);
-							odm_write_4byte(dm, 0xcb8, 0x06000000);
-							reg2 = odm_get_bb_reg(dm, R_0xd00, 0x0000001f);
-							image_power = (reg2 << 32) + reg1;
-							RF_DBG(dm, DBG_RF_IQK, "Before PW = %d\n", image_power);
-							odm_write_4byte(dm, 0xcb8, 0x07000000);
-							reg1 = odm_get_bb_reg(dm, R_0xd00, 0xffffffff);
-							odm_write_4byte(dm, 0xcb8, 0x08000000);
-							reg2 = odm_get_bb_reg(dm, R_0xd00, 0x0000001f);
-							image_power = (reg2 << 32) + reg1;
-							RF_DBG(dm, DBG_RF_IQK, "After PW = %d\n", image_power);
-#endif
 							break;
 						} else {
 							odm_set_bb_reg(dm, R_0xc10, 0x000003ff, 0x200 >> 1);
@@ -1553,21 +1365,6 @@ void _iqk_tx_8812a(
 							odm_write_4byte(dm, 0xeb8, 0x04000000);
 							TX_Y1[cal] = odm_get_bb_reg(dm, R_0xd40, 0x07ff0000) << 21;
 							TX1IQKOK = true;
-#if 0
-							int			reg1 = 0, reg2 = 0, image_power = 0;
-							odm_write_4byte(dm, 0xeb8, 0x01000000);
-							reg1 = odm_get_bb_reg(dm, R_0xd40, 0xffffffff);
-							odm_write_4byte(dm, 0xeb8, 0x02000000);
-							reg2 = odm_get_bb_reg(dm, R_0xd40, 0x0000001f);
-							image_power = (reg2 << 32) + reg1;
-							dbg_print("Before PW = %d\n", image_power);
-							odm_write_4byte(dm, 0xeb8, 0x03000000);
-							reg1 = odm_get_bb_reg(dm, R_0xd40, 0xffffffff);
-							odm_write_4byte(dm, 0xeb8, 0x04000000);
-							reg2 = odm_get_bb_reg(dm, R_0xd40, 0x0000001f);
-							image_power = (reg2 << 32) + reg1;
-							dbg_print("After PW = %d\n", image_power);
-#endif
 							break;
 						} else {
 							TX1IQKOK = false;
@@ -1778,21 +1575,6 @@ void _iqk_tx_8812a(
 							break;
 					}
 				}
-#if 0
-				odm_write_4byte(dm, 0xeb8, 0x05000000);
-				reg1 = odm_get_bb_reg(dm, R_0xd40, 0xffffffff);
-				odm_write_4byte(dm, 0xeb8, 0x06000000);
-				reg2 = odm_get_bb_reg(dm, R_0xd40, 0x0000001f);
-				image_power = (reg2 << 32) + reg1;
-				RF_DBG(dm, DBG_RF_IQK, "Before PW = %d\n", image_power);
-
-				odm_write_4byte(dm, 0xeb8, 0x07000000);
-				reg1 = odm_get_bb_reg(dm, R_0xd40, 0xffffffff);
-				odm_write_4byte(dm, 0xeb8, 0x08000000);
-				reg2 = odm_get_bb_reg(dm, R_0xd40, 0x0000001f);
-				image_power = (reg2 << 32) + reg1;
-				RF_DBG(dm, DBG_RF_IQK, "After PW = %d\n", image_power);
-#endif
 
 				RF_DBG(dm, DBG_RF_IQK, "RXB_cal_retry = %d\n", cal_retry);
 			}

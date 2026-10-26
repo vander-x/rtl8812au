@@ -2670,10 +2670,10 @@ exit:
 	return annc_cnt;
 }
 
-static void mpath_tx_tasklet_hdl(void *priv)
+static void mpath_tx_tasklet_hdl(struct tasklet_struct *t)
 {
-	_adapter *adapter = (_adapter *)priv;
-	struct rtw_mesh_info *minfo = &adapter->mesh_info;
+	struct rtw_mesh_info *minfo = from_tasklet(minfo, t, mpath_tx_tasklet);
+	_adapter *adapter = container_of(minfo, _adapter, mesh_info);
 	struct xmit_frame *xframe;
 	_list *list, *head;
 	_list tmp;
@@ -3091,9 +3091,7 @@ void rtw_mesh_init_mesh_info(_adapter *adapter)
 	rtw_mesh_pathtbl_init(adapter);
 
 	_rtw_init_queue(&minfo->mpath_tx_queue);
-	tasklet_init(&minfo->mpath_tx_tasklet
-		, (void(*)(unsigned long))mpath_tx_tasklet_hdl
-		, (unsigned long)adapter);
+	tasklet_setup(&minfo->mpath_tx_tasklet, mpath_tx_tasklet_hdl);
 
 	rtw_mrc_init(adapter);
 
@@ -3781,12 +3779,6 @@ int rtw_mesh_rx_msdu_act_check(union recv_frame *rframe
 #endif
 
 	/* fwd info lifetime update */
-	#if 0
-	if (!is_mda_self)
-		mDA(A3) fwinfo.lifetime
-	mSA(A4) fwinfo.lifetime
-	Precursor-to-mDA(A2) fwinfo.lifetime
-	#endif
 
 	/* update/create pxoxy info for SA, mSA */
 	if ((mctrl->flags & MESH_FLAGS_AE)
@@ -3864,10 +3856,6 @@ int rtw_mesh_rx_msdu_act_check(union recv_frame *rframe
 
 		} else {
 			/* mDA is known in fwd info */
-			#if 0
-			if	(TA is not in precursors)
-				goto exit;
-			#endif
 			goto fwd_chk;
 		}
 

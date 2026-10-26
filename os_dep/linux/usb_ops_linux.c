@@ -633,10 +633,6 @@ u32 usb_write_port(struct intf_hdl *pintfhdl, u32 addr, u32 cnt, u8 *wmem)
 #ifdef USB_PACKET_OFFSET_SZ
 #endif
 
-#if 0
-	if (bwritezero)
-		purb->transfer_flags |= URB_ZERO_PACKET;
-#endif
 
 	status = usb_submit_urb(purb, GFP_ATOMIC);
 	if (!status) {
@@ -724,11 +720,11 @@ void usb_init_recvbuf(_adapter *padapter, struct recv_buf *precvbuf)
 int recvbuf2recvframe(PADAPTER padapter, void *ptr);
 
 #ifdef CONFIG_USE_USB_BUFFER_ALLOC_RX
-void usb_recv_tasklet(unsigned long priv)
+void usb_recv_tasklet(struct tasklet_struct *t)
 {
 	struct recv_buf *precvbuf = NULL;
-	_adapter	*padapter = (_adapter *)priv;
-	struct recv_priv	*precvpriv = &padapter->recvpriv;
+	struct recv_priv *precvpriv = from_tasklet(precvpriv, t, recv_tasklet);
+	_adapter *padapter = precvpriv->adapter;
 
 	while (NULL != (precvbuf = rtw_dequeue_recvbuf(&precvpriv->recv_buf_pending_queue))) {
 		if (RTW_CANNOT_RUN(padapter)) {
@@ -862,11 +858,11 @@ u32 usb_read_port(struct intf_hdl *pintfhdl, u32 addr, u32 cnt, u8 *rmem)
 }
 #else	/* CONFIG_USE_USB_BUFFER_ALLOC_RX */
 
-void usb_recv_tasklet(unsigned long priv)
+void usb_recv_tasklet(struct tasklet_struct *t)
 {
 	_pkt			*pskb;
-	_adapter		*padapter = (_adapter *)priv;
-	struct recv_priv	*precvpriv = &padapter->recvpriv;
+	struct recv_priv	*precvpriv = from_tasklet(precvpriv, t, recv_tasklet);
+	_adapter		*padapter = precvpriv->adapter;
 	struct recv_buf	*precvbuf = NULL;
 
 	while (NULL != (pskb = skb_dequeue(&precvpriv->rx_skb_queue))) {

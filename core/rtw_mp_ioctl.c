@@ -1320,23 +1320,6 @@ NDIS_STATUS oid_rt_pro_set_basic_rate_hdl(struct oid_par_priv *poid_par_priv)
 
 	if (poid_par_priv->type_of_oid != SET_OID)
 		return NDIS_STATUS_NOT_ACCEPTED;
-#if 0
-	ratevalue = *((u32 *)poid_par_priv->information_buf);
-
-	for (i = 0; i < NumRates; i++) {
-		if (ratevalue == mpdatarate[i])
-			datarates[i] = mpdatarate[i];
-		else
-			datarates[i] = 0xff;
-	}
-
-	_irqlevel_changed_(&oldirql, LOWER);
-
-	if (rtw_setbasicrate_cmd(padapter, datarates) != _SUCCESS)
-		status = NDIS_STATUS_NOT_ACCEPTED;
-
-	_irqlevel_changed_(&oldirql, RAISE);
-#endif
 
 
 	return status;
@@ -1448,30 +1431,6 @@ NDIS_STATUS oid_rt_pro_h2c_get_rate_table_hdl(struct oid_par_priv *poid_par_priv
 	if (poid_par_priv->type_of_oid != QUERY_OID)
 		return NDIS_STATUS_NOT_ACCEPTED;
 
-#if 0
-	struct mp_wi_cntx *pmp_wi_cntx = &(Adapter->mppriv.wi_cntx);
-	u8 res = _SUCCESS;
-	DEBUG_INFO(("===> Set OID_RT_PRO_H2C_GET_RATE_TABLE.\n"));
-
-	if (pmp_wi_cntx->bmp_wi_progress == _TRUE) {
-		DEBUG_ERR(("\n mp workitem is progressing, not allow to set another workitem right now!!!\n"));
-		Status = NDIS_STATUS_NOT_ACCEPTED;
-		break;
-	} else {
-		pmp_wi_cntx->bmp_wi_progress = _TRUE;
-		pmp_wi_cntx->param.bcompleted = _FALSE;
-		pmp_wi_cntx->param.act_type = MPT_GET_RATE_TABLE;
-		pmp_wi_cntx->param.io_offset = 0x0;
-		pmp_wi_cntx->param.bytes_cnt = sizeof(struct getratable_rsp);
-		pmp_wi_cntx->param.io_value = 0xffffffff;
-
-		res = rtw_getrttbl_cmd(Adapter, (struct getratable_rsp *)pmp_wi_cntx->param.data);
-		*poid_par_priv->bytes_rw = poid_par_priv->information_buf_len;
-		if (res != _SUCCESS)
-			Status = NDIS_STATUS_NOT_ACCEPTED;
-	}
-	DEBUG_INFO(("\n <=== Set OID_RT_PRO_H2C_GET_RATE_TABLE.\n"));
-#endif
 
 
 	return status;
@@ -1648,104 +1607,6 @@ NDIS_STATUS oid_rt_pro_dele_sta_info_hdl(struct oid_par_priv *poid_par_priv)
 #endif
 }
 /* ------------------------------------------------------------------------------ */
-#if 0
-static u32 mp_query_drv_var(_adapter *padapter, u8 offset, u32 var)
-{
-#ifdef CONFIG_SDIO_HCI
-
-	if (offset == 1) {
-		u16 tmp_blk_num;
-		tmp_blk_num = rtw_read16(padapter, SDIO_RX0_RDYBLK_NUM);
-		if (adapter_to_dvobj(padapter)->rxblknum != tmp_blk_num) {
-			/*	sd_recv_rxfifo(padapter); */
-		}
-	}
-
-#if 0
-	if (offset <= 100) { /* For setting data rate and query data rate */
-		if (offset == 100) { /* For query data rate */
-			var = padapter->registrypriv.tx_rate;
-
-		} else if (offset < 0x1d) { /* For setting data rate */
-			padapter->registrypriv.tx_rate = offset;
-			var = padapter->registrypriv.tx_rate;
-			padapter->registrypriv.use_rate = _TRUE;
-		} else { /* not use the data rate */
-			padapter->registrypriv.use_rate = _FALSE;
-		}
-	} else if (offset <= 110) { /* for setting debug level */
-		if (offset == 110) { /* For query data rate */
-			padapter->registrypriv.dbg_level = GlobalDebugLevel;
-			var = padapter->registrypriv.dbg_level;
-		} else if (offset < 110 && offset > 100) {
-			padapter->registrypriv.dbg_level = GlobalDebugLevel = offset - 100;
-			var = padapter->registrypriv.dbg_level;
-
-		}
-	} else if (offset > 110 && offset < 116) {
-		if (115 == offset) {
-		} else {
-			switch (offset) {
-			case 111:
-				adapter_to_dvobj(padapter)->tx_block_mode = 1;
-				adapter_to_dvobj(padapter)->rx_block_mode = 1;
-				break;
-			case 112:
-				adapter_to_dvobj(padapter)->tx_block_mode = 1;
-				adapter_to_dvobj(padapter)->rx_block_mode = 0;
-				break;
-			case 113:
-				adapter_to_dvobj(padapter)->tx_block_mode = 0;
-				adapter_to_dvobj(padapter)->rx_block_mode = 1;
-				break;
-			case 114:
-				adapter_to_dvobj(padapter)->tx_block_mode = 0;
-				adapter_to_dvobj(padapter)->rx_block_mode = 0;
-				break;
-			default:
-				break;
-
-			}
-
-		}
-
-	} else if (offset >= 127) {
-		u64	prnt_dbg_comp;
-		u8   chg_idx;
-		u64	tmp_dbg_comp;
-		chg_idx = offset - 0x80;
-		tmp_dbg_comp = BIT(chg_idx);
-		prnt_dbg_comp = padapter->registrypriv.dbg_component = GlobalDebugComponents;
-		if (offset == 127) {
-			/*		prnt_dbg_comp=padapter->registrypriv.dbg_component= GlobalDebugComponents; */
-			var = (u32)(padapter->registrypriv.dbg_component);
-			prnt_dbg_comp = GlobalDebugComponents;
-			prnt_dbg_comp = GlobalDebugComponents = padapter->registrypriv.dbg_component;
-
-		} else {
-			prnt_dbg_comp = GlobalDebugComponents;
-			prnt_dbg_comp = GlobalDebugComponents = padapter->registrypriv.dbg_component;
-
-			if (GlobalDebugComponents & tmp_dbg_comp) {
-				/* this bit is already set, now clear it */
-				GlobalDebugComponents = GlobalDebugComponents & (~tmp_dbg_comp);
-			} else {
-				/* this bit is not set, now set it. */
-				GlobalDebugComponents = GlobalDebugComponents | tmp_dbg_comp;
-			}
-			prnt_dbg_comp = GlobalDebugComponents;
-
-			var = (u32)(GlobalDebugComponents);
-			/* GlobalDebugComponents=padapter->registrypriv.dbg_component; */
-
-		}
-	}
-#endif
-#endif
-
-	return var;
-}
-#endif
 
 NDIS_STATUS oid_rt_pro_query_dr_variable_hdl(struct oid_par_priv *poid_par_priv)
 {
@@ -1782,31 +1643,6 @@ NDIS_STATUS oid_rt_pro_query_dr_variable_hdl(struct oid_par_priv *poid_par_priv)
 /* ------------------------------------------------------------------------------ */
 NDIS_STATUS oid_rt_pro_rx_packet_type_hdl(struct oid_par_priv *poid_par_priv)
 {
-#if 0
-	PADAPTER	Adapter = (PADAPTER)(poid_par_priv->adapter_context);
-
-	NDIS_STATUS	status = NDIS_STATUS_SUCCESS;
-
-
-	if (poid_par_priv->information_buf_len < sizeof(UCHAR)) {
-		status = NDIS_STATUS_INVALID_LENGTH;
-		*poid_par_priv->bytes_needed = sizeof(UCHAR);
-		return status;
-	}
-
-	if (poid_par_priv->type_of_oid == SET_OID) {
-		Adapter->mppriv.rx_with_status = *(UCHAR *) poid_par_priv->information_buf;
-
-
-	} else {
-		*(UCHAR *) poid_par_priv->information_buf = Adapter->mppriv.rx_with_status;
-		*poid_par_priv->bytes_rw = poid_par_priv->information_buf_len;
-
-
-		/* *(u32 *)&Adapter->eeprompriv.mac_addr[0]=rtw_read32(Adapter, 0x10250050); */
-		/* *(u16 *)&Adapter->eeprompriv.mac_addr[4]=rtw_read16(Adapter, 0x10250054); */
-	}
-#endif
 
 	return NDIS_STATUS_SUCCESS;
 }
@@ -2035,31 +1871,6 @@ NDIS_STATUS oid_rt_pro_efuse_map_hdl(struct oid_par_priv *poid_par_priv)
 NDIS_STATUS oid_rt_set_crystal_cap_hdl(struct oid_par_priv *poid_par_priv)
 {
 	NDIS_STATUS	status = NDIS_STATUS_SUCCESS;
-#if 0
-	PADAPTER	Adapter = (PADAPTER)(poid_par_priv->adapter_context);
-
-
-	u32		crystal_cap = 0;
-
-
-	if (poid_par_priv->type_of_oid != SET_OID)
-		return NDIS_STATUS_NOT_ACCEPTED;
-
-	if (poid_par_priv->information_buf_len < sizeof(u32))
-		return NDIS_STATUS_INVALID_LENGTH;
-
-	crystal_cap = *((u32 *)poid_par_priv->information_buf); /* 4 */
-	if (crystal_cap > 0xf)
-		return NDIS_STATUS_NOT_ACCEPTED;
-
-	Adapter->mppriv.curr_crystalcap = crystal_cap;
-
-	_irqlevel_changed_(&oldirql, LOWER);
-	SetCrystalCap(Adapter);
-	_irqlevel_changed_(&oldirql, RAISE);
-
-
-#endif
 	return status;
 }
 
@@ -2080,61 +1891,6 @@ NDIS_STATUS oid_rt_set_rx_packet_type_hdl(struct oid_par_priv *poid_par_priv)
 
 	rx_pkt_type = *((u8 *)poid_par_priv->information_buf); /* 4 */
 
-#if 0
-	_irqlevel_changed_(&oldirql, LOWER);
-#if 0
-	rcr_val8 = rtw_read8(Adapter, 0x10250048);/* RCR */
-	rcr_val8 &= ~(RCR_AB | RCR_AM | RCR_APM | RCR_AAP);
-
-	if (rx_pkt_type == RX_PKT_BROADCAST)
-		rcr_val8 |= (RCR_AB | RCR_ACRC32);
-	else if (rx_pkt_type == RX_PKT_DEST_ADDR)
-		rcr_val8 |= (RCR_AAP | RCR_AM | RCR_ACRC32);
-	else if (rx_pkt_type == RX_PKT_PHY_MATCH)
-		rcr_val8 |= (RCR_APM | RCR_ACRC32);
-	else
-		rcr_val8 &= ~(RCR_AAP | RCR_APM | RCR_AM | RCR_AB | RCR_ACRC32);
-	rtw_write8(padapter, 0x10250048, rcr_val8);
-#else
-	rcr_val32 = rtw_read32(padapter, RCR);/* RCR = 0x10250048 */
-	rcr_val32 &= ~(RCR_CBSSID | RCR_AB | RCR_AM | RCR_APM | RCR_AAP);
-#if 0
-	if (rx_pkt_type == RX_PKT_BROADCAST)
-		rcr_val32 |= (RCR_AB | RCR_AM | RCR_APM | RCR_AAP | RCR_ACRC32);
-	else if (rx_pkt_type == RX_PKT_DEST_ADDR) {
-		/* rcr_val32 |= (RCR_CBSSID|RCR_AAP|RCR_AM|RCR_ACRC32); */
-		rcr_val32 |= (RCR_CBSSID | RCR_APM | RCR_ACRC32);
-	} else if (rx_pkt_type == RX_PKT_PHY_MATCH) {
-		rcr_val32 |= (RCR_APM | RCR_ACRC32);
-		/* rcr_val32 |= (RCR_AAP|RCR_ACRC32); */
-	} else
-		rcr_val32 &= ~(RCR_AAP | RCR_APM | RCR_AM | RCR_AB | RCR_ACRC32);
-#else
-	switch (rx_pkt_type) {
-	case RX_PKT_BROADCAST:
-		rcr_val32 |= (RCR_AB | RCR_AM | RCR_APM | RCR_AAP | RCR_ACRC32);
-		break;
-	case RX_PKT_DEST_ADDR:
-		rcr_val32 |= (RCR_AB | RCR_AM | RCR_APM | RCR_AAP | RCR_ACRC32);
-		break;
-	case RX_PKT_PHY_MATCH:
-		rcr_val32 |= (RCR_APM | RCR_ACRC32);
-		break;
-	default:
-		rcr_val32 &= ~(RCR_AAP | RCR_APM | RCR_AM | RCR_AB | RCR_ACRC32);
-		break;
-	}
-
-	if (rx_pkt_type == RX_PKT_DEST_ADDR)
-		padapter->mppriv.check_mp_pkt = 1;
-	else
-		padapter->mppriv.check_mp_pkt = 0;
-#endif
-	rtw_write32(padapter, RCR, rcr_val32);
-
-#endif
-	_irqlevel_changed_(&oldirql, RAISE);
-#endif
 
 	return status;
 }
@@ -2237,85 +1993,6 @@ unsigned int mp_ioctl_xmit_packet_hdl(struct oid_par_priv *poid_par_priv)
 	return NDIS_STATUS_SUCCESS;
 }
 
-#if 0
-unsigned int mp_ioctl_xmit_packet_hdl(struct oid_par_priv *poid_par_priv)
-{
-	unsigned char *pframe, *pmp_pkt;
-	struct ethhdr *pethhdr;
-	struct pkt_attrib *pattrib;
-	struct rtw_ieee80211_hdr *pwlanhdr;
-	unsigned short *fctrl;
-	int llc_sz, payload_len;
-	struct mp_xmit_frame *pxframe =  NULL;
-	struct mp_xmit_packet *pmp_xmitpkt = (struct mp_xmit_packet *)param;
-	u8 addr3[] = {0x02, 0xE0, 0x4C, 0x87, 0x66, 0x55};
-
-	/*	RTW_INFO("+mp_ioctl_xmit_packet_hdl\n"); */
-
-	pxframe = alloc_mp_xmitframe(&padapter->mppriv);
-	if (pxframe == NULL) {
-		DEBUG_ERR(("Can't alloc pmpframe %d:%s\n", __LINE__, __FILE__));
-		return -1;
-	}
-
-	/* mp_xmit_pkt */
-	payload_len = pmp_xmitpkt->len - 14;
-	pmp_pkt = (unsigned char *)pmp_xmitpkt->mem;
-	pethhdr = (struct ethhdr *)pmp_pkt;
-
-	/* RTW_INFO("payload_len=%d, pkt_mem=0x%x\n", pmp_xmitpkt->len, (void*)pmp_xmitpkt->mem); */
-
-	/* RTW_INFO("pxframe=0x%x\n", (void*)pxframe); */
-	/* RTW_INFO("pxframe->mem=0x%x\n", (void*)pxframe->mem); */
-
-	/* update attribute */
-	pattrib = &pxframe->attrib;
-	memset((u8 *)(pattrib), 0, sizeof(struct pkt_attrib));
-	pattrib->pktlen = pmp_xmitpkt->len;
-	pattrib->ether_type = ntohs(pethhdr->h_proto);
-	pattrib->hdrlen = 24;
-	pattrib->nr_frags = 1;
-	pattrib->priority = 0;
-#ifndef CONFIG_MP_LINUX
-	if (IS_MCAST(pethhdr->h_dest))
-		pattrib->mac_id = 4;
-	else
-		pattrib->mac_id = 5;
-#else
-	pattrib->mac_id = 5;
-#endif
-
-	/*  */
-	memset(pxframe->mem, 0 , WLANHDR_OFFSET);
-	pframe = (u8 *)(pxframe->mem) + WLANHDR_OFFSET;
-
-	pwlanhdr = (struct rtw_ieee80211_hdr *)pframe;
-
-	fctrl = &(pwlanhdr->frame_ctl);
-	*(fctrl) = 0;
-	set_frame_sub_type(pframe, WIFI_DATA);
-
-	_rtw_memcpy(pwlanhdr->addr1, pethhdr->h_dest, ETH_ALEN);
-	_rtw_memcpy(pwlanhdr->addr2, pethhdr->h_source, ETH_ALEN);
-
-	_rtw_memcpy(pwlanhdr->addr3, addr3, ETH_ALEN);
-
-	pwlanhdr->seq_ctl = 0;
-	pframe += pattrib->hdrlen;
-
-	llc_sz = rtw_put_snap(pframe, pattrib->ether_type);
-	pframe += llc_sz;
-
-	_rtw_memcpy(pframe, (void *)(pmp_pkt + 14),  payload_len);
-
-	pattrib->last_txcmdsz = pattrib->hdrlen + llc_sz + payload_len;
-
-	DEBUG_INFO(("issuing mp_xmit_frame, tx_len=%d, ether_type=0x%x\n", pattrib->last_txcmdsz, pattrib->ether_type));
-	xmit_mp_frame(padapter, pxframe);
-
-	return _SUCCESS;
-}
-#endif
 /* ------------------------------------------------------------------------------ */
 NDIS_STATUS oid_rt_set_power_down_hdl(struct oid_par_priv *poid_par_priv)
 {

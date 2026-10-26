@@ -1465,10 +1465,6 @@ void rtw_mesh_path_timer(void *ctx)
 	struct rtw_mesh_cfg *mshcfg = &adapter->mesh_cfg;
 #endif
 	/* TBD: Proctect for suspend */
-#if 0
-	if (suspending)
-		return;
-#endif
 	enter_critical_bh(&path->state_lock);
 	if (path->flags & RTW_MESH_PATH_RESOLVED ||
 			(!(path->flags & RTW_MESH_PATH_RESOLVING))) {
